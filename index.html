@@ -258,7 +258,7 @@
         .label-content:active { cursor: grabbing; }
         .label-content.invisible { opacity: 0.4; transform: scale(0.95); }
         
-        /* NUEVO: Capa de acciones sobre la etiqueta en Hover */
+        /* Capa de acciones sobre la etiqueta en Hover */
         .label-actions {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(240, 247, 250, 0.9); /* Fondo difuminado azul pastel */
@@ -394,7 +394,7 @@
                     <input type="checkbox" id="inv-hide-zero" class="ios-switch" onclick="event.stopPropagation()">
                 </div>
 
-                <!-- NUEVO: Switch Imprimir con Ubicaciones -->
+                <!-- Switch Imprimir con Ubicaciones -->
                 <div class="toggle-wrap" onclick="document.getElementById('inv-print-ubica').click()">
                     <label>Imprimir Ubicaciones</label>
                     <input type="checkbox" id="inv-print-ubica" class="ios-switch" checked onclick="event.stopPropagation()">
@@ -565,11 +565,19 @@
     </div>
 
     <!-- =========================================================
-         SCRIPT PRINCIPAL (LÓGICA UNIFICADA)
+         SCRIPT PRINCIPAL (LÓGICA UNIFICADA Y AUTOGUARDADO)
          ========================================================= -->
     <script>
         // Config PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // --- PREVENIR CIERRE ACCIDENTAL DE PESTAÑA ---
+        window.addEventListener('beforeunload', function (e) {
+            if (GlobalApp.data && GlobalApp.data.length > 0) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
 
         // --- ESTADO Y CORE GLOBAL ---
         const GlobalApp = {
@@ -586,9 +594,45 @@
                 document.getElementById('dz-pdf').style.display = tabId === 'lbl' ? 'flex' : 'none';
             },
 
+            // --- SISTEMA DE AUTOGUARDADO (MEMORIA NAVEGADOR) ---
+            saveSession() {
+                try {
+                    const session = {
+                        data: this.data,
+                        lblQueue: LblApp.queue
+                    };
+                    localStorage.setItem('hub_logistico_session', JSON.stringify(session));
+                } catch (e) {
+                    console.warn("Memoria llena o error al guardar sesión:", e);
+                }
+            },
+
+            restoreSession() {
+                const stored = localStorage.getItem('hub_logistico_session');
+                if (stored) {
+                    try {
+                        const session = JSON.parse(stored);
+                        if (session.data && session.data.length > 0) {
+                            this.data = session.data;
+                            document.getElementById('txt-excel-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Memoria Recuperada (${this.data.length} reg)</span>`;
+                            InvApp.loadData();
+                            LblApp.loadData();
+                        }
+                        if (session.lblQueue && session.lblQueue.length > 0) {
+                            LblApp.queue = session.lblQueue;
+                            LblApp.renderQueue();
+                        }
+                    } catch (e) {
+                        console.error("Error restaurando sesión:", e);
+                    }
+                }
+            },
+
             clearData() {
                 if(confirm("¿Seguro que deseas borrar toda la memoria y registros cargados?")) {
                     this.data = [];
+                    localStorage.removeItem('hub_logistico_session'); // Borrar memoria local
+                    
                     document.getElementById('file-excel').value = '';
                     document.getElementById('file-pdf').value = '';
                     document.getElementById('txt-excel-status').textContent = 'Alimenta ambos sistemas';
@@ -648,9 +692,10 @@
                             
                             document.getElementById('txt-excel-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Cargado (${this.data.length} reg)</span>`;
                             
-                            // Cargar datos en módulos
+                            // Cargar datos y guardar sesión
                             InvApp.loadData();
                             LblApp.loadData();
+                            this.saveSession();
                         }
                     } catch (error) {
                         document.getElementById('txt-excel-status').innerHTML = '<span style="color:var(--sys-red); font-weight:700;">Error</span>';
@@ -704,7 +749,6 @@
                 this.applyFilters();
             },
 
-            // Lógica Multi-Select para Filtros de Inventario
             toggleDropdown(id) {
                 const optionsDiv = document.getElementById(`options-${id}`);
                 const header = document.getElementById(`header-${id}`);
@@ -841,6 +885,7 @@
                         }
                     }
                     this.updateDiff();
+                    GlobalApp.saveSession(); // Guardar avance del digitador
                 }
             },
 
@@ -974,10 +1019,12 @@
                         }
                     }
                 });
-                if(added > 0) this.renderQueue();
+                if(added > 0) {
+                    this.renderQueue();
+                    GlobalApp.saveSession();
+                }
             },
 
-            // Buscador 1: Individual
             searchIndividual(term) {
                 const resDiv = document.getElementById('lbl-search-results');
                 resDiv.innerHTML = '';
@@ -1016,11 +1063,11 @@
                     cantidad: q, oc: ""
                 });
                 this.renderQueue();
+                GlobalApp.saveSession(); // Guardar sesión
                 document.getElementById('lbl-add-block').style.display = 'none';
                 this.selectedProduct = null;
             },
 
-            // Buscador 2: Por Ubicación
             searchUbicacion(term) {
                 const resDiv = document.getElementById('lbl-results-ubica');
                 resDiv.innerHTML = '';
@@ -1063,9 +1110,9 @@
                     }
                 });
                 this.renderQueue();
+                GlobalApp.saveSession();
             },
 
-            // Sección Manual
             toggleManualAdd() {
                 const content = document.getElementById('lbl-manual-content');
                 const icon = document.getElementById('lbl-manual-icon');
@@ -1090,17 +1137,18 @@
 
                 this.queue.push({ codigo: cod, desc: desc, ubicacion: ubi, bodega: bod, cantidad: cant, oc: oc });
                 this.renderQueue();
+                GlobalApp.saveSession();
                 
                 document.getElementById('man-cod').value = ''; document.getElementById('man-desc').value = '';
                 document.getElementById('man-bod').value = ''; document.getElementById('man-ubi').value = '';
                 document.getElementById('man-oc').value = ''; document.getElementById('man-cant').value = '1';
             },
 
-            // Acciones sobre la cola
             setAllQtyToOne() {
                 if (this.queue.length === 0) return;
                 this.queue.forEach(item => item.cantidad = 1);
                 this.renderQueue();
+                GlobalApp.saveSession();
             },
 
             limpiarCola() {
@@ -1109,11 +1157,21 @@
                     this.renderQueue();
                     document.getElementById('lbl-print-container').innerHTML = '';
                     document.getElementById('lbl-msg-area').style.display = 'block';
+                    GlobalApp.saveSession();
                 }
             },
 
-            updateQty(i, val) { this.queue[i].cantidad = parseInt(val) || 0; this.renderQueue(); },
-            removeItem(i) { this.queue.splice(i, 1); this.renderQueue(); },
+            updateQty(i, val) { 
+                this.queue[i].cantidad = parseInt(val) || 0; 
+                this.renderQueue(); 
+                GlobalApp.saveSession();
+            },
+            
+            removeItem(i) { 
+                this.queue.splice(i, 1); 
+                this.renderQueue(); 
+                GlobalApp.saveSession();
+            },
 
             renderQueue() {
                 const tbody = document.getElementById('lbl-cola-tbody');
@@ -1138,7 +1196,6 @@
                 document.getElementById('lbl-total-hoj').textContent = Math.ceil(tEti / 30);
             },
 
-            // PDF OC
             processPdfOC(file) {
                 document.getElementById('txt-pdf-status').innerHTML = '<span style="color:var(--sys-yellow); font-weight:700;">Procesando...</span>';
                 const reader = new FileReader();
@@ -1153,7 +1210,6 @@
                             text += textContent.items.map(item => item.str).join("\n") + "\n";
                         }
                         
-                        // Parse
                         let nroOc = "";
                         const matchOc = text.match(/ORDEN DE COMPRA\s*(?:N[°º. ]+)?\s*([A-Za-z0-9-]+)/i);
                         if (matchOc && matchOc[1]) { let m = matchOc[1].trim().match(/(\d+)$/); nroOc = m ? parseInt(m[1],10).toString() : matchOc[1].trim(); }
@@ -1187,6 +1243,7 @@
                             }
                         }
                         this.renderQueue();
+                        GlobalApp.saveSession();
                         document.getElementById('txt-pdf-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Cargado (${added} eti)</span>`;
                     } catch (err) {
                         document.getElementById('txt-pdf-status').innerHTML = '<span style="color:var(--sys-red); font-weight:700;">Error PDF</span>';
@@ -1195,7 +1252,6 @@
                 reader.readAsArrayBuffer(file);
             },
 
-            // Generación y Drag & Drop
             generarVistaPrevia() {
                 let flattened = [];
                 this.queue.forEach(item => {
@@ -1257,7 +1313,9 @@
             clearSlot(event, el) {
                 event.stopPropagation();
                 const content = el.closest('.label-content');
-                if(content) content.remove();
+                if(content) {
+                    content.remove();
+                }
             },
 
             imprimir() {
@@ -1285,7 +1343,13 @@
             }
         };
 
-        // --- EVENT LISTENERS (INPUTS) ---
+        // --- EVENT LISTENERS E INICIALIZACIÓN ---
+        
+        // Cargar sesión si existe al iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            GlobalApp.restoreSession();
+        });
+
         // Carga Archivos
         document.getElementById('file-excel').addEventListener('change', e => { if (e.target.files[0]) GlobalApp.processExcel(e.target.files[0]); });
         document.getElementById('file-pdf').addEventListener('change', e => { if (e.target.files[0]) LblApp.processPdfOC(e.target.files[0]); e.target.value=''; });
