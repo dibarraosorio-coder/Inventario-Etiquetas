@@ -24,21 +24,20 @@
             --radius-lg: 12px;
             
             /* Paleta Azul Pastel */
-            --bg: #F0F7FA;              /* Fondo general muy claro */
-            --surface: #FFFFFF;         /* Paneles blancos */
-            --surface2: #E1EFF6;        /* Fondos secundarios suaves */
-            --border: #C4DFED;          /* Bordes en tono azul cielo */
-            --border-light: #DDF0F9;    /* Bordes muy sutiles */
+            --bg: #F0F7FA;              
+            --surface: #FFFFFF;         
+            --surface2: #E1EFF6;        
+            --border: #C4DFED;          
+            --border-light: #DDF0F9;    
             
-            --text: #2C3E50;            /* Texto oscuro para contraste */
-            --text-muted: #5C738A;      /* Texto secundario */
-            --text-tertiary: #85A0B7;   /* Texto de menor jerarquía */
+            --text: #2C3E50;            
+            --text-muted: #5C738A;      
+            --text-tertiary: #85A0B7;   
             
-            --accent: #5CA4D3;          /* Azul pastel/medio para botones primarios */
-            --accent-hover: #4A8CBA;    /* Hover del acento */
+            --accent: #5CA4D3;          
+            --accent-hover: #4A8CBA;    
             --accent-glow: rgba(92, 164, 211, 0.2);
             
-            /* Colores de Sistema */
             --sys-green: #34d399;
             --sys-yellow: #fbbf24;
             --sys-red: #f87171;
@@ -129,7 +128,6 @@
         .tab-content.active { display: flex; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Inputs y Botones Estándar */
         .pl-select, .pl-input { 
             background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); 
             padding: 0 10px; height: 34px; font-family: var(--font-main); font-size: 12px; 
@@ -171,7 +169,7 @@
             display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;
         }
         .ms-header:hover:not(.disabled) { border-color: var(--accent); }
-        .ms-header.disabled { background-color: var(--bg); cursor: not-allowed; color: var(--text-tertiary); }
+        .ms-header.disabled { background: var(--bg); cursor: not-allowed; color: var(--text-tertiary); }
         .ms-options {
             position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface);
             border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 10px 25px rgba(0,0,0,0.1);
@@ -236,7 +234,6 @@
         .badge-stock { background: var(--bg); color: var(--text); padding: 3px 8px; border-radius: var(--radius-sm); font-size: 10px; font-weight: 800; border: 1px solid var(--border);}
         .badge-ubica { background: var(--accent); color: var(--surface); padding: 3px 8px; border-radius: var(--radius-sm); font-size: 10px; font-weight: 800; } 
         
-        /* Fila Agregar Manual */
         .fila-inputs { display: flex; gap: 8px; margin-bottom: 8px; }
         .fila-inputs > * { flex: 1; }
 
@@ -246,7 +243,7 @@
         .input-tabla-cantidad { width: 60px; padding: 4px; font-size: 11px; font-weight: bold; text-align: center; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);}
         
         /* Contenedor de Impresión (Estilos para Hoja Física B/N) */
-        .lbl-preview-area { flex: 1; overflow-y: auto; padding: 30px; background: var(--bg); display: flex; flex-direction: column; align-items: center; }
+        .lbl-preview-area { flex: 1; overflow-y: auto; padding: 30px; background: var(--bg); display: flex; flex-direction: column; align-items: center; position: relative;}
         .sheet-wrapper { display: flex; flex-direction: column; align-items: center; gap: 30px; padding-bottom: 40px;}
         .page { width: 210mm; height: 297mm; background: #fff; color: #000; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border-radius: 8px; padding-top: 15.5mm; padding-bottom: 11.5mm; box-sizing: border-box; page-break-after: always; flex-shrink: 0; font-family: sans-serif;}
         .label-grid { display: grid; grid-template-columns: repeat(3, 66mm); grid-template-rows: repeat(10, 1fr); column-gap: 6mm; row-gap: 0mm; height: 100%; justify-content: center; }
@@ -288,17 +285,63 @@
         .t-desc { font-size: 10pt; font-weight: bold; color: #000; text-transform: uppercase; margin-bottom: 2.5mm; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
         .t-code { font-size: 8.5pt; font-weight: 900; color: #000; }
 
+        /* ==============================================================
+           8. CSS DE IMPRESIÓN (SOLUCIÓN DEL "SCREENSHOT")
+           ============================================================== */
         @media print {
-            body { background: #ffffff !important; color: #000000 !important; }
-            .header, .tabs-container, .sidebar { display: none !important; }
-            .tab-content { display: block !important; overflow: visible !important; }
-            .app-layout { display: block !important; overflow: visible !important; }
-            .lbl-preview-area { padding: 0 !important; background: #fff !important; }
-            .sheet-wrapper { gap: 0; padding-bottom: 0; }
+            body { 
+                background: #ffffff !important; 
+                color: #000000 !important; 
+            }
+            
+            /* Ocultar elementos de UI completamente */
+            .header, 
+            .tabs-container { 
+                display: none !important; 
+            }
+            
+            /* Asegurar que SOLO se muestre la pestaña de etiquetas */
+            #tab-inv { display: none !important; }
+            #tab-lbl { display: block !important; }
+            
+            /* Ocultar sidebar en etiquetas */
+            #tab-lbl .sidebar { display: none !important; }
+            
+            /* Ajustar contenedores para que el contenido fluya a la impresora */
+            .app-layout { 
+                display: block !important; 
+                overflow: visible !important; 
+                height: auto !important;
+            }
+            
+            .lbl-preview-area { 
+                display: block !important; 
+                padding: 0 !important; 
+                background: #fff !important; 
+                overflow: visible !important;
+                height: auto !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            
+            #lbl-msg-area { display: none !important; }
+            
+            .sheet-wrapper { gap: 0; padding-bottom: 0; display: block !important; }
             .label-slot { border: none !important; } 
+            
             /* Ocultar acciones de Hover al imprimir */
             .label-actions { display: none !important; }
-            .page { box-shadow: none !important; border-radius: 0; margin: 0; padding-top: 15.5mm; padding-bottom: 11.5mm; }
+            
+            .page { 
+                box-shadow: none !important; 
+                border-radius: 0; 
+                margin: 0; 
+                padding-top: 15.5mm; 
+                padding-bottom: 11.5mm; 
+                page-break-after: always; 
+            }
             @page { size: A4; margin: 0; }
         }
     </style>
@@ -565,7 +608,7 @@
     </div>
 
     <!-- =========================================================
-         SCRIPT PRINCIPAL (LÓGICA UNIFICADA Y AUTOGUARDADO)
+         SCRIPT PRINCIPAL (LÓGICA UNIFICADA Y AUTOGUARDADO BASE)
          ========================================================= -->
     <script>
         // Config PDF.js
@@ -594,34 +637,20 @@
                 document.getElementById('dz-pdf').style.display = tabId === 'lbl' ? 'flex' : 'none';
             },
 
-            // --- SISTEMA DE AUTOGUARDADO (MEMORIA NAVEGADOR) ---
-            saveSession() {
-                try {
-                    const session = {
-                        data: this.data,
-                        lblQueue: LblApp.queue
-                    };
-                    localStorage.setItem('hub_logistico_session', JSON.stringify(session));
-                } catch (e) {
-                    console.warn("Memoria llena o error al guardar sesión:", e);
-                }
-            },
-
+            // --- SISTEMA DE AUTOGUARDADO (SOLO MAESTRO) ---
             restoreSession() {
-                const stored = localStorage.getItem('hub_logistico_session');
+                const stored = localStorage.getItem('hub_logistico_excel_base');
                 if (stored) {
                     try {
-                        const session = JSON.parse(stored);
-                        if (session.data && session.data.length > 0) {
-                            this.data = session.data;
-                            document.getElementById('txt-excel-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Memoria Recuperada (${this.data.length} reg)</span>`;
-                            InvApp.loadData();
-                            LblApp.loadData();
-                        }
-                        if (session.lblQueue && session.lblQueue.length > 0) {
-                            LblApp.queue = session.lblQueue;
-                            LblApp.renderQueue();
-                        }
+                        const parsedData = JSON.parse(stored);
+                        
+                        // Forzamos a que el stock físico sea null (para no guardar lo digitado)
+                        this.data = parsedData.map(item => ({...item, fisico: null}));
+                        
+                        document.getElementById('txt-excel-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Memoria Recuperada (${this.data.length} reg)</span>`;
+                        
+                        InvApp.loadData();
+                        LblApp.loadData();
                     } catch (e) {
                         console.error("Error restaurando sesión:", e);
                     }
@@ -629,9 +658,9 @@
             },
 
             clearData() {
-                if(confirm("¿Seguro que deseas borrar toda la memoria y registros cargados?")) {
+                if(confirm("¿Seguro que deseas borrar toda la memoria y el Excel base cargado?")) {
                     this.data = [];
-                    localStorage.removeItem('hub_logistico_session'); // Borrar memoria local
+                    localStorage.removeItem('hub_logistico_excel_base'); // Borrar memoria local
                     
                     document.getElementById('file-excel').value = '';
                     document.getElementById('file-pdf').value = '';
@@ -686,16 +715,18 @@
                                     familia: familiaVal,
                                     desc: String(row[kDesc] || row[3] || '').trim(),
                                     stock: parseFloat(row[kCant]) || 0,
-                                    fisico: null 
+                                    fisico: null // Arranca vacío
                                 };
                             }).filter(r => r.codigo !== '' && !r.codigo.toLowerCase().includes('nº producto'));
                             
                             document.getElementById('txt-excel-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Cargado (${this.data.length} reg)</span>`;
                             
-                            // Cargar datos y guardar sesión
+                            // Guardar solo la base en Local Storage
+                            localStorage.setItem('hub_logistico_excel_base', JSON.stringify(this.data));
+                            
+                            // Cargar datos en módulos
                             InvApp.loadData();
                             LblApp.loadData();
-                            this.saveSession();
                         }
                     } catch (error) {
                         document.getElementById('txt-excel-status').innerHTML = '<span style="color:var(--sys-red); font-weight:700;">Error</span>';
@@ -885,7 +916,6 @@
                         }
                     }
                     this.updateDiff();
-                    GlobalApp.saveSession(); // Guardar avance del digitador
                 }
             },
 
@@ -1021,7 +1051,6 @@
                 });
                 if(added > 0) {
                     this.renderQueue();
-                    GlobalApp.saveSession();
                 }
             },
 
@@ -1063,7 +1092,6 @@
                     cantidad: q, oc: ""
                 });
                 this.renderQueue();
-                GlobalApp.saveSession(); // Guardar sesión
                 document.getElementById('lbl-add-block').style.display = 'none';
                 this.selectedProduct = null;
             },
@@ -1110,7 +1138,6 @@
                     }
                 });
                 this.renderQueue();
-                GlobalApp.saveSession();
             },
 
             toggleManualAdd() {
@@ -1137,7 +1164,6 @@
 
                 this.queue.push({ codigo: cod, desc: desc, ubicacion: ubi, bodega: bod, cantidad: cant, oc: oc });
                 this.renderQueue();
-                GlobalApp.saveSession();
                 
                 document.getElementById('man-cod').value = ''; document.getElementById('man-desc').value = '';
                 document.getElementById('man-bod').value = ''; document.getElementById('man-ubi').value = '';
@@ -1148,7 +1174,6 @@
                 if (this.queue.length === 0) return;
                 this.queue.forEach(item => item.cantidad = 1);
                 this.renderQueue();
-                GlobalApp.saveSession();
             },
 
             limpiarCola() {
@@ -1157,20 +1182,17 @@
                     this.renderQueue();
                     document.getElementById('lbl-print-container').innerHTML = '';
                     document.getElementById('lbl-msg-area').style.display = 'block';
-                    GlobalApp.saveSession();
                 }
             },
 
             updateQty(i, val) { 
                 this.queue[i].cantidad = parseInt(val) || 0; 
                 this.renderQueue(); 
-                GlobalApp.saveSession();
             },
             
             removeItem(i) { 
                 this.queue.splice(i, 1); 
                 this.renderQueue(); 
-                GlobalApp.saveSession();
             },
 
             renderQueue() {
@@ -1243,7 +1265,6 @@
                             }
                         }
                         this.renderQueue();
-                        GlobalApp.saveSession();
                         document.getElementById('txt-pdf-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Cargado (${added} eti)</span>`;
                     } catch (err) {
                         document.getElementById('txt-pdf-status').innerHTML = '<span style="color:var(--sys-red); font-weight:700;">Error PDF</span>';
@@ -1358,6 +1379,7 @@
         document.getElementById('inv-sel-bodega').addEventListener('change', () => { InvApp.updateMultiSelects(); InvApp.applyFilters(); });
         document.getElementById('inv-search').addEventListener('input', () => InvApp.applyFilters());
         document.getElementById('inv-hide-zero').addEventListener('change', () => InvApp.applyFilters());
+        document.getElementById('inv-print-ubica').addEventListener('change', () => InvApp.applyFilters());
         document.getElementById('inv-btn-pdf').addEventListener('click', () => InvApp.exportPDF());
 
         // Listeners Etiquetas
