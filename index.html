@@ -3,491 +3,593 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Inventario - Toma Física</title>
+    <title>Hub Logístico | Inventario y Etiquetas</title>
     
     <!-- Librerías Externas -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Fuente Cursiva para la Marca de Agua -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;1,800&display=swap" rel="stylesheet">
     
     <style>
-        /* PALETA DE COLORES VERDE PROFESIONAL */
+        /* ==============================================================
+           1. VARIABLES BASE (TEMA AZUL PASTEL)
+           ============================================================== */
         :root {
-            --bg-body: #F0FDF4; 
-            --bg-panel: #FFFFFF;
-            --primary: #064E3B; 
-            --primary-light: #047857; 
-            --accent: #10B981; 
-            --accent-hover: #059669;
-            --border: #D1D5DB;
-            --text-main: #1F2937;
-            --text-muted: #4B5563;
-            --success: #15803D;
-            --danger: #DC2626;
-            --neutral: #9CA3AF;
+            --font-main: 'Nunito', -apple-system, sans-serif;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            
+            /* Paleta Azul Pastel */
+            --bg: #F0F7FA;              /* Fondo general muy claro */
+            --surface: #FFFFFF;         /* Paneles blancos */
+            --surface2: #E1EFF6;        /* Fondos secundarios suaves */
+            --border: #C4DFED;          /* Bordes en tono azul cielo */
+            --border-light: #DDF0F9;    /* Bordes muy sutiles */
+            
+            --text: #2C3E50;            /* Texto oscuro para contraste */
+            --text-muted: #5C738A;      /* Texto secundario */
+            --text-tertiary: #85A0B7;   /* Texto de menor jerarquía */
+            
+            --accent: #5CA4D3;          /* Azul pastel/medio para botones primarios */
+            --accent-hover: #4A8CBA;    /* Hover del acento */
+            --accent-glow: rgba(92, 164, 211, 0.2);
+            
+            /* Colores de Sistema */
+            --sys-green: #34d399;
+            --sys-yellow: #fbbf24;
+            --sys-red: #f87171;
         }
-        
-        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body, html {
-            margin: 0; padding: 0;
             height: 100vh;
-            background-color: var(--bg-body);
-            color: var(--text-main);
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-main);
+            font-size: 13px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            -webkit-font-smoothing: antialiased;
         }
         
-        /* HEADER */
-        header {
-            background-color: var(--primary);
-            color: white;
-            padding: 1rem 2rem;
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--surface); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; border: 2px solid var(--surface); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        /* ==============================================================
+           2. CABECERA Y ZONA DE CARGA UNIFICADA
+           ============================================================== */
+        .header { 
+            flex-shrink: 0;
+            background: var(--surface); 
+            padding: 12px 24px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            border-bottom: 2px solid var(--border); 
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        }
+        
+        .header h1 { font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; display: flex; align-items: center;}
+        .header h1 .accent-dot { color: var(--accent); margin: 0 6px; } 
+
+        .upload-zone-container { display: flex; gap: 15px; align-items: center; }
+        
+        .drop-zone {
+            background: var(--bg);
+            border: 1.5px dashed var(--accent);
+            border-radius: var(--radius-md);
+            padding: 8px 15px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            border-bottom: 4px solid var(--accent);
-            flex: 0 0 auto;
-            z-index: 10;
-        }
-        header h1 { margin: 0; font-size: 1.3rem; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;}
-        header i { font-size: 1.5rem; color: var(--accent); margin-right: 10px; }
-        
-        /* MARCA DE AGUA DEL CREADOR */
-        .creator-watermark {
-            font-family: 'Great Vibes', cursive;
-            font-size: 1.15rem; 
-            color: rgba(255, 255, 255, 0.4);
-            letter-spacing: 1px;
-            user-select: none;
-            pointer-events: none;
-        }
-
-        /* LAYOUT PRINCIPAL */
-        .layout-container {
-            display: flex;
-            flex: 1;
-            padding: 1rem;
-            gap: 1rem;
-            overflow: hidden;
-            width: 100%;
-        }
-        
-        /* SIDEBAR (Filtros) */
-        .sidebar {
-            flex: 0 0 320px;
-            background: var(--bg-panel);
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            gap: 1.2rem;
-            overflow-y: auto;
-            border: 1px solid var(--border);
-        }
-        
-        /* ZONA DRAG & DROP */
-        .drop-zone {
-            border: 2px dashed #9CA3AF;
-            border-radius: 8px;
-            padding: 1.5rem 1rem;
-            text-align: center;
+            gap: 10px;
             cursor: pointer;
             transition: all 0.2s ease;
-            background-color: #F9FAFB;
         }
-        .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background-color: #ECFDF5; }
-        .drop-zone i { font-size: 2.5rem; color: var(--neutral); margin-bottom: 0.8rem; }
-        .drop-zone p { margin: 0; font-size: 0.9rem; color: var(--text-muted); }
+        .drop-zone:hover, .drop-zone.dragover { background: var(--surface2); transform: scale(1.02); }
+        .drop-zone i { font-size: 1.4rem; color: var(--accent); }
+        .drop-zone p { font-size: 11px; color: var(--text-muted); line-height: 1.2; margin-top:2px;}
+        .drop-zone strong { color: var(--text); font-size: 11px;}
         .drop-zone input[type="file"] { display: none; }
-        
-        /* FILTROS Y SELECTORES MULTIPLES CUSTOM */
-        .filter-group { display: flex; flex-direction: column; gap: 0.4rem; }
-        .filter-group label { font-weight: 600; font-size: 0.8rem; color: var(--primary-light); text-transform: uppercase; }
-        .filter-hint { font-size: 0.7rem; color: var(--neutral); font-weight: normal; text-transform: none; }
-        
-        select.simple-select, input.simple-input {
-            padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;
-            font-size: 0.9rem; color: var(--text-main); background: #fff; outline: none;
-            width: 100%; transition: border-color 0.2s;
-        }
-        select.simple-select { cursor: pointer; }
-        select.simple-select:focus, input.simple-input:focus { border-color: var(--accent); }
-        select.simple-select:disabled, input.simple-input:disabled { background-color: #F3F4F6; cursor: not-allowed; color: #9CA3AF; }
 
-        /* MULTI-SELECT VENTANA FLOTANTE */
+        .btn-clear-global { 
+            background: transparent; color: var(--sys-red); border: 1px solid var(--sys-red); 
+            padding: 8px 12px; border-radius: var(--radius-sm); font-family: var(--font-main); 
+            font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; 
+            display: flex; align-items: center; gap: 6px; text-transform: uppercase; 
+        }
+        .btn-clear-global:hover { background: var(--sys-red); color: white; }
+
+        /* ==============================================================
+           3. ESTILOS COMUNES (BOTONES, INPUTS, TABS)
+           ============================================================== */
+        .tabs-container { 
+            flex-shrink: 0; display: flex; gap: 6px; padding: 15px 24px 0; 
+            background: var(--surface); border-bottom: 1px solid var(--border); z-index: 90;
+        }
+        
+        .tab-btn { 
+            background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); 
+            border-bottom: none; padding: 10px 20px; border-radius: var(--radius-md) var(--radius-md) 0 0; 
+            cursor: pointer; font-family: var(--font-main); font-weight: 700; font-size: 13px; 
+            transition: all 0.2s; position: relative; display:flex; align-items:center; gap:8px;
+        }
+        .tab-btn:hover { color: var(--text); background: var(--surface2); }
+        .tab-btn.active { color: var(--surface); background: var(--accent); border-color: var(--accent); }
+
+        .tab-content { flex: 1; display: none; overflow: hidden; background: var(--bg); }
+        .tab-content.active { display: flex; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Inputs y Botones Estándar */
+        .pl-select, .pl-input { 
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); 
+            padding: 0 10px; height: 34px; font-family: var(--font-main); font-size: 12px; 
+            color: var(--text); font-weight: 500; outline: none; transition: all 0.2s; width: 100%; box-sizing: border-box;
+        }
+        .pl-select:focus, .pl-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .pl-select:disabled, .pl-input:disabled { background: var(--bg); color: var(--text-tertiary); cursor:not-allowed; }
+
+        .btn-primary { 
+            background: var(--accent); color: var(--surface); border: none; padding: 0 15px; 
+            border-radius: var(--radius-sm); font-family: var(--font-main); font-weight: 700; 
+            font-size: 11px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; 
+            gap: 6px; text-transform: uppercase; height: 34px; width: 100%; box-shadow: 0 4px 10px var(--accent-glow);
+        }
+        .btn-primary:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; box-shadow:none;}
+
+        .btn-outline { 
+            background: transparent; color: var(--accent); border: 1.5px solid var(--accent); 
+            padding: 0 15px; border-radius: var(--radius-sm); font-family: var(--font-main); font-weight: 700; 
+            font-size: 11px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; 
+            gap: 6px; text-transform: uppercase; height: 34px; width: 100%;
+        }
+        .btn-outline:hover { background: var(--accent); color: var(--surface); }
+
+        .btn-ghost-danger { background: transparent; color: var(--sys-red); border: 1px solid var(--sys-red); padding: 5px 10px; font-size: 10px; font-weight: 700; border-radius: 6px; cursor: pointer; transition: 0.2s; text-transform:uppercase;}
+        .btn-ghost-danger:hover { background: var(--sys-red); color: white; }
+
+        /* ==============================================================
+           4. MULTI-SELECTORES (FILTROS)
+           ============================================================== */
+        .filter-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
+        .filter-group label { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+        
         .multi-select { position: relative; width: 100%; user-select: none; }
         .ms-header {
-            padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;
-            background: #fff; cursor: pointer; font-size: 0.85rem; color: var(--text-main);
-            display: flex; justify-content: space-between; align-items: center; transition: border-color 0.2s;
+            padding: 0 10px; height: 34px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            background: var(--surface); cursor: pointer; font-size: 12px; color: var(--text); font-weight:500;
+            display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;
         }
         .ms-header:hover:not(.disabled) { border-color: var(--accent); }
-        .ms-header.disabled { background-color: #F3F4F6; cursor: not-allowed; color: #9CA3AF; border-color: var(--border); }
+        .ms-header.disabled { background-color: var(--bg); cursor: not-allowed; color: var(--text-tertiary); }
         .ms-options {
-            position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff;
-            border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            max-height: 220px; overflow-y: auto; z-index: 1000; display: none;
-            flex-direction: column; gap: 2px; padding: 0.5rem;
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface);
+            border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-height: 220px; overflow-y: auto; z-index: 1000; display: none; flex-direction: column; padding: 8px; gap:2px;
         }
         .ms-options.show { display: flex; }
         .ms-option-label {
-            display: flex; align-items: center; gap: 8px; font-size: 0.85rem;
-            cursor: pointer; padding: 6px; border-radius: 4px; transition: background 0.2s; color: var(--text-main);
+            display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight:500;
+            cursor: pointer; padding: 6px 8px; border-radius: 4px; transition: background 0.2s; color: var(--text);
         }
-        .ms-option-label:hover { background: #ECFDF5; }
-        .ms-option-label input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; margin: 0; }
+        .ms-option-label:hover { background: var(--surface2); }
+        .ms-option-label input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; margin: 0; }
+
+        .toggle-wrap { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--surface); border-radius: var(--radius-sm); border: 1px solid var(--border); height: 34px; cursor: pointer; margin-bottom:15px;}
+        .toggle-wrap label { font-size:11px; font-weight:800; color:var(--text); text-transform:uppercase; margin:0; cursor:pointer;}
+        input[type="checkbox"].ios-switch { appearance: none; width: 34px; height: 18px; background: var(--border-light); border-radius: 20px; position: relative; cursor: pointer; outline: none; transition: background 0.3s; flex-shrink: 0; margin: 0; border: 1px solid var(--border);}
+        input[type="checkbox"].ios-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; background: #fff; border-radius: 50%; transition: transform 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
+        input[type="checkbox"].ios-switch:checked { background: var(--accent); border-color: var(--accent);}
+        input[type="checkbox"].ios-switch:checked::after { transform: translateX(16px); }
+
+        /* ==============================================================
+           5. ESTRUCTURA DE PANELES (INVENTARIO Y ETIQUETAS)
+           ============================================================== */
+        .app-layout { display: flex; flex: 1; width: 100%; overflow: hidden; }
         
-        /* CHECKBOX STOCK > 0 */
-        .toggle-container {
-            display: flex; align-items: center; gap: 10px;
-            background: #F9FAFB; padding: 10px; border-radius: 6px; border: 1px solid var(--border); margin-top: 5px;
+        .sidebar { flex: 0 0 320px; background: var(--surface); padding: 20px; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+        .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+        
+        /* Tablas Comunes */
+        .table-wrap { flex: 1; overflow: auto; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; background: var(--surface); border-radius: var(--radius-md); overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02);}
+        th { background: var(--surface2); color: var(--accent); font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 15px; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid var(--border); cursor: pointer; user-select: none; transition: background 0.2s;}
+        th:hover { background: var(--border-light); }
+        td { padding: 10px 15px; border-bottom: 1px solid var(--border-light); vertical-align: middle; color: var(--text); font-weight: 500; font-size: 12px;}
+        tr:hover td { background: var(--bg); }
+
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px; color: var(--text-tertiary); text-align: center; }
+        .empty-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.6; color: var(--accent); }
+
+        /* ==============================================================
+           6. COMPONENTES ESPECÍFICOS: INVENTARIO
+           ============================================================== */
+        .metrics-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--surface); }
+        .tag { background: var(--surface2); color: var(--accent); padding: 4px 10px; border-radius: 12px; font-weight: 800; border: 1px solid var(--border); font-size: 11px;}
+        
+        .input-fisico { width: 80px; padding: 6px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); text-align: center; font-weight: 700; background: var(--surface); color: var(--text); outline: none; transition: all 0.2s; font-family: monospace; font-size: 13px;}
+        .input-fisico:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        
+        .text-success { color: var(--sys-green); font-weight: 800;}
+        .text-danger { color: var(--sys-red); font-weight: 800;}
+        .text-neutral { color: var(--text-tertiary); }
+
+        .pagination { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0;}
+        .page-info { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+
+        /* ==============================================================
+           7. COMPONENTES ESPECÍFICOS: ETIQUETAS
+           ============================================================== */
+        .resultados-busqueda { background: var(--surface); border: 1px solid var(--border); max-height: 200px; overflow-y: auto; display: none; margin-top: 4px; border-radius: var(--radius-md); position: absolute; width: 100%; z-index: 999; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .resultado-item { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; }
+        .resultado-item:hover { background: var(--surface2); }
+        .badge-stock { background: var(--bg); color: var(--text); padding: 3px 8px; border-radius: var(--radius-sm); font-size: 10px; font-weight: 800; border: 1px solid var(--border);}
+        .badge-ubica { background: var(--accent); color: var(--surface); padding: 3px 8px; border-radius: var(--radius-sm); font-size: 10px; font-weight: 800; } 
+        
+        /* Fila Agregar Manual */
+        .fila-inputs { display: flex; gap: 8px; margin-bottom: 8px; }
+        .fila-inputs > * { flex: 1; }
+
+        .tabla-cola { width: 100%; border-collapse: separate; border-spacing: 0; box-shadow:none; border: 1px solid var(--border);}
+        .tabla-cola th { position: static; background: var(--surface2); padding: 8px; font-size: 9px;}
+        .tabla-cola td { padding: 8px; font-size: 11px;}
+        .input-tabla-cantidad { width: 60px; padding: 4px; font-size: 11px; font-weight: bold; text-align: center; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);}
+        
+        /* Contenedor de Impresión (Estilos para Hoja Física B/N) */
+        .lbl-preview-area { flex: 1; overflow-y: auto; padding: 30px; background: var(--bg); display: flex; flex-direction: column; align-items: center; }
+        .sheet-wrapper { display: flex; flex-direction: column; align-items: center; gap: 30px; padding-bottom: 40px;}
+        .page { width: 210mm; height: 297mm; background: #fff; color: #000; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border-radius: 8px; padding-top: 15.5mm; padding-bottom: 11.5mm; box-sizing: border-box; page-break-after: always; flex-shrink: 0; font-family: sans-serif;}
+        .label-grid { display: grid; grid-template-columns: repeat(3, 66mm); grid-template-rows: repeat(10, 1fr); column-gap: 6mm; row-gap: 0mm; height: 100%; justify-content: center; }
+        
+        .label-slot { width: 66mm; height: 100%; box-sizing: border-box; border: 1px dashed #d1d5db; position: relative; transition: background 0.2s; }
+        .label-slot.hovered-slot { background-color: rgba(92, 164, 211, 0.1); border: 2px dashed var(--accent); }
+        
+        .label-content { width: 100%; height: 100%; display: flex; flex-direction: row; align-items: center; box-sizing: border-box; padding: 1.5mm; background: #fff; cursor: grab; }
+        .label-content:active { cursor: grabbing; }
+        .label-content.invisible { opacity: 0.4; transform: scale(0.95); }
+        
+        .left-col { width: 38%; height: 100%; display: flex; flex-direction: column; justify-content: center; padding-right: 1.5mm; box-sizing: border-box; text-align: left; }
+        .right-col { width: 62%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-left: 1.5mm; box-sizing: border-box; text-align: center; }
+        
+        .divider-print { width: 0px; height: 75%; border-left: 1.5px solid #000; margin: 0 1mm; } 
+        
+        .data-group { margin-bottom: 1.5mm; line-height: 1.1; }
+        .data-group:last-child { margin-bottom: 0; }
+        .t-title { font-size: 5.5pt; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 0.5mm; }
+        .t-value { font-size: 7pt; font-weight: bold; color: #1e293b; word-break: break-all; text-transform: uppercase;}
+        .val-red { color: #dc2626 !important; }
+        .val-blue { color: #0284c7 !important; }
+        
+        .t-desc { font-size: 10pt; font-weight: bold; color: #000; text-transform: uppercase; margin-bottom: 2.5mm; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+        .t-code { font-size: 8.5pt; font-weight: 900; color: #000; }
+
+        @media print {
+            body { background: #ffffff !important; color: #000000 !important; }
+            .header, .tabs-container, .sidebar { display: none !important; }
+            .tab-content { display: block !important; overflow: visible !important; }
+            .app-layout { display: block !important; overflow: visible !important; }
+            .lbl-preview-area { padding: 0 !important; background: #fff !important; }
+            .sheet-wrapper { gap: 0; padding-bottom: 0; }
+            .label-slot { border: none !important; } 
+            .page { box-shadow: none !important; border-radius: 0; margin: 0; padding-top: 15.5mm; padding-bottom: 11.5mm; }
+            @page { size: A4; margin: 0; }
         }
-        .toggle-container input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;}
-        .toggle-text { font-size: 0.85rem; font-weight: 500; cursor: pointer; }
-        
-        /* BOTONES */
-        .btn {
-            padding: 0.8rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem;
-            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-            border: none; transition: 0.2s; width: 100%;
-        }
-        .btn-pdf { background-color: var(--primary-light); color: white; margin-top: auto; }
-        .btn-pdf:hover:not(:disabled) { background-color: var(--primary); transform: translateY(-1px); }
-        .btn-clear { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 0.6rem; margin-top: 5px; }
-        .btn-clear:hover { background-color: #FEF2F2; }
-        .btn:disabled { background-color: var(--border); color: var(--neutral); cursor: not-allowed; transform: none; }
-        
-        /* ÁREA CENTRAL */
-        .content-area {
-            flex: 1; background: var(--bg-panel); border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid var(--border);
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-        
-        /* TABS */
-        .tabs { display: flex; border-bottom: 1px solid var(--border); background: #F9FAFB; }
-        .tab-btn {
-            flex: 1; padding: 1rem; border: none; background: none; font-weight: 600;
-            color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s;
-        }
-        .tab-btn:hover { background: #F3F4F6; color: var(--primary); }
-        .tab-btn.active { color: var(--accent-hover); border-bottom-color: var(--accent-hover); background: white; }
-        
-        /* MÉTRICAS */
-        .metrics-bar {
-            display: flex; justify-content: space-between; align-items: center; padding: 10px 1.5rem;
-            border-bottom: 1px solid var(--border); font-size: 0.85rem; font-weight: 600;
-        }
-        .tag { background: #ECFDF5; color: var(--primary-light); padding: 3px 8px; border-radius: 12px; border: 1px solid #A7F3D0; }
-        .total-diff-box { font-size: 0.95rem; padding: 5px 12px; border-radius: 6px; background: #F3F4F6; border: 1px solid var(--border); }
-        
-        /* TABLA Y ORDENAMIENTO */
-        .table-container { flex: 1; overflow-y: auto; background: white; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        
-        th {
-            background: #F8FAFC; color: var(--primary-light); padding: 12px 1rem;
-            font-size: 0.75rem; text-transform: uppercase; position: sticky; top: 0; z-index: 5;
-            border-bottom: 2px solid var(--border); user-select: none;
-        }
-        
-        /* Estilos para encabezados ordenables */
-        th.sortable { cursor: pointer; transition: background-color 0.2s; }
-        th.sortable:hover { background-color: #E2E8F0; color: var(--primary); }
-        th.sortable i { margin-left: 6px; color: #CBD5E1; font-size: 0.85rem; transition: color 0.2s; }
-        th.sortable.active i { color: var(--accent-hover); }
-        
-        td { padding: 10px 1rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: middle; }
-        tr:hover { background-color: #F9FAFB; }
-        
-        /* INPUT FÍSICO Y DIFERENCIA */
-        .input-fisico {
-            width: 80px; padding: 6px; border: 1px solid var(--border); border-radius: 4px;
-            text-align: center; font-weight: 600; outline: none; transition: border-color 0.2s;
-        }
-        .input-fisico:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); }
-        .diff-cell { font-weight: bold; font-size: 0.95rem; text-align: center; }
-        .text-success { color: var(--success); }
-        .text-danger { color: var(--danger); }
-        .text-neutral { color: var(--neutral); }
-        
-        /* ESTADO VACÍO */
-        .empty-state {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100%; color: var(--neutral); text-align: center;
-        }
-        .empty-state i { font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.4; }
-        
-        /* PAGINACIÓN */
-        .pagination {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 1.5rem; border-top: 1px solid var(--border); background: #F9FAFB;
-        }
-        .page-btn {
-            padding: 6px 12px; border: 1px solid var(--border); background: white;
-            border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: var(--primary-light);
-        }
-        .page-btn:hover:not(:disabled) { background: #E5E7EB; }
-        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .page-info { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
-        
     </style>
 </head>
 <body>
 
-    <header>
-        <div style="display: flex; align-items: center;">
-            <i class="fa-solid fa-boxes-stacked"></i>
-            <h1>Sistema de Inventario Físico</h1>
-        </div>
-        <!-- Marca de Agua añadida en la esquina superior derecha -->
-        <div class="creator-watermark">Creado por Diego Ibarra</div>
-    </header>
-
-    <div class="layout-container">
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <div class="drop-zone" id="dropZone">
-                <i class="fa-solid fa-file-excel"></i>
-                <p id="dropZoneText"><strong>Arrastra el Excel aquí</strong><br>o haz clic para buscar</p>
-                <input type="file" id="fileInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
-            </div>
-            
-            <div class="filter-group">
-                <label>Bodega (Almacén)</label>
-                <select id="bodegaSelect" class="simple-select" disabled><option value="">Cargue archivo...</option></select>
-            </div>
-
-            <!-- NUEVO BUSCADOR POR TEXTO -->
-            <div class="filter-group">
-                <label>Buscador <span class="filter-hint">(Código o Descripción)</span></label>
-                <input type="text" id="searchInput" class="simple-input" placeholder="Ej: mini, tubo, clavo..." disabled>
-            </div>
-            
-            <!-- MULTI-SELECT: UBICACIÓN -->
-            <div class="filter-group">
-                <label>Ubicación</label>
-                <div class="multi-select" id="ms-ubicacion">
-                    <div class="ms-header disabled" id="header-ubicacion" onclick="App.toggleDropdown('ubicacion')">
-                        Todas las ubicaciones <span><i class="fa-solid fa-chevron-down"></i></span>
-                    </div>
-                    <div class="ms-options" id="options-ubicacion"></div>
-                </div>
-            </div>
-
-            <!-- MULTI-SELECT: FAMILIA -->
-            <div class="filter-group">
-                <label>Familia (1ras 3 Letras)</label>
-                <div class="multi-select" id="ms-familia">
-                    <div class="ms-header disabled" id="header-familia" onclick="App.toggleDropdown('familia')">
-                        Todas las familias <span><i class="fa-solid fa-chevron-down"></i></span>
-                    </div>
-                    <div class="ms-options" id="options-familia"></div>
-                </div>
-            </div>
-            
-            <div class="toggle-container" onclick="document.getElementById('consumosToggle').click()">
-                <input type="checkbox" id="consumosToggle" onclick="event.stopPropagation()">
-                <span class="toggle-text">Ocultar stock en 0</span>
-            </div>
-            
-            <button class="btn btn-pdf" id="btnExportPDF" disabled>
-                <i class="fa-solid fa-file-pdf"></i> Generar PDF
-            </button>
-
-            <!-- Botón para borrar memoria -->
-            <button class="btn btn-clear" id="btnClearSession" style="display:none;" onclick="App.clearSession()">
-                <i class="fa-solid fa-trash-can"></i> Limpiar Memoria
-            </button>
-        </aside>
+    <!-- CABECERA PRINCIPAL UNIFICADA -->
+    <div class="header">
+        <h1>Hub Logístico <span class="accent-dot">·</span> <span style="color: var(--text-muted); font-weight: 600;">Inventario y Etiquetas</span></h1>
         
-        <!-- CONTENIDO CENTRAL -->
-        <main class="content-area">
-            <!-- TABS -->
-            <div class="tabs">
-                <button class="tab-btn active" id="tabPrint" onclick="App.setTab('print')">
-                    <i class="fa-solid fa-print"></i> Registros a Imprimir
-                </button>
-                <button class="tab-btn" id="tabEdit" onclick="App.setTab('edit')">
-                    <i class="fa-solid fa-pen-to-square"></i> Ingreso Físico y Diferencias
-                </button>
+        <div class="upload-zone-container">
+            <!-- Carga Excel Maestro -->
+            <div class="drop-zone" id="dz-excel" onclick="document.getElementById('file-excel').click()">
+                <i class="fa-solid fa-file-excel"></i>
+                <div>
+                    <strong>Subir Maestro (Excel)</strong>
+                    <p id="txt-excel-status">Alimenta ambos sistemas</p>
+                </div>
+                <input type="file" id="file-excel" accept=".xlsx, .xls, .csv">
             </div>
 
-            <div class="metrics-bar" id="metricsContainer" style="display: none;">
-                <div style="display:flex; gap:15px; align-items:center;">
-                    <div>Bodega: <span id="lblBodega" class="tag">-</span></div>
-                    <div>Registros: <span id="lblRegistros" class="tag">0</span></div>
+            <!-- Carga PDF O.C. (Solo visible en Etiquetas) -->
+            <div class="drop-zone" id="dz-pdf" onclick="document.getElementById('file-pdf').click()" style="display: none; border-color: var(--sys-red);">
+                <i class="fa-solid fa-file-pdf" style="color: var(--sys-red);"></i>
+                <div>
+                    <strong style="color: var(--text);">Subir O. Compra (PDF)</strong>
+                    <p id="txt-pdf-status">Solo para etiquetas</p>
                 </div>
-                <!-- Contenedor Diferencia Total -->
-                <div id="totalDiffContainer" class="total-diff-box" style="display:none;"></div>
-            </div>
-            
-            <!-- CONTENEDOR TABLA -->
-            <div class="table-container" id="tableContainer">
-                <div class="empty-state">
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <p>Esperando datos del inventario.<br>Cargue su documento Excel o restaure una sesión.</p>
-                </div>
+                <input type="file" id="file-pdf" accept=".pdf">
             </div>
 
-            <!-- PAGINACIÓN -->
-            <div class="pagination" id="paginationContainer" style="display:none;">
-                <button class="page-btn" id="btnPrev" onclick="App.changePage(-1)">
-                    <i class="fa-solid fa-chevron-left"></i> Anterior
-                </button>
-                <span class="page-info" id="pageInfo">Página 1 de 1</span>
-                <button class="page-btn" id="btnNext" onclick="App.changePage(1)">
-                    Siguiente <i class="fa-solid fa-chevron-right"></i>
-                </button>
-            </div>
-        </main>
+            <button class="btn-clear-global" onclick="GlobalApp.clearData()" title="Limpiar todos los datos">
+                <i class="fa-solid fa-trash-can"></i> Limpiar Sesión
+            </button>
+        </div>
     </div>
 
-    <!-- SCRIPT PRINCIPAL -->
-    <script>
-        const App = {
-            rawData: [],
-            filteredData: [],
-            currentPage: 1,
-            itemsPerPage: 50,
-            currentTab: 'print',
-            fileName: '',
+    <!-- TABS DE NAVEGACIÓN -->
+    <div class="tabs-container">
+        <button class="tab-btn active" id="btn-tab-inv" onclick="GlobalApp.switchTab('inv')">
+            <i class="fa-solid fa-boxes-stacked"></i> Toma de Inventario
+        </button>
+        <button class="tab-btn" id="btn-tab-lbl" onclick="GlobalApp.switchTab('lbl')">
+            <i class="fa-solid fa-tags"></i> Impresión Etiquetas
+        </button>
+    </div>
+
+    <!-- =========================================================
+         TAB 1: TOMA FÍSICA DE INVENTARIO
+         ========================================================= -->
+    <div id="tab-inv" class="tab-content active">
+        <div class="app-layout">
             
-            // Estado de Ordenamiento
-            sortCol: null,
-            sortAsc: true,
+            <!-- Sidebar Inventario -->
+            <aside class="sidebar">
+                <div class="filter-group">
+                    <label>Bodega (Almacén)</label>
+                    <select id="inv-sel-bodega" class="pl-select" disabled>
+                        <option value="">Cargue maestro...</option>
+                    </select>
+                </div>
 
-            init() {
-                // Referencias al DOM
-                this.dropZone = document.getElementById('dropZone');
-                this.fileInput = document.getElementById('fileInput');
-                this.dropText = document.getElementById('dropZoneText');
+                <div class="filter-group">
+                    <label>Buscador (Código/Desc)</label>
+                    <input type="text" id="inv-search" class="pl-input" placeholder="Ej: clavo, tubo..." disabled>
+                </div>
                 
-                this.bodegaSel = document.getElementById('bodegaSelect');
-                this.searchInput = document.getElementById('searchInput');
-                this.consumosTgl = document.getElementById('consumosToggle');
-                
-                this.btnPDF = document.getElementById('btnExportPDF');
-                this.btnClearSession = document.getElementById('btnClearSession');
-                this.tableContainer = document.getElementById('tableContainer');
-                
-                // Eventos Drag & Drop
-                this.dropZone.addEventListener('click', () => this.fileInput.click());
-                this.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); this.dropZone.classList.add('dragover'); });
-                this.dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); this.dropZone.classList.remove('dragover'); });
-                this.dropZone.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    this.dropZone.classList.remove('dragover');
-                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) this.processFile(e.dataTransfer.files[0]);
-                });
-                this.fileInput.addEventListener('change', (e) => {
-                    if (e.target.files && e.target.files.length > 0) this.processFile(e.target.files[0]);
-                });
+                <!-- Select Múltiple: Ubicación -->
+                <div class="filter-group">
+                    <label>Ubicación</label>
+                    <div class="multi-select" id="ms-ubicacion">
+                        <div class="ms-header disabled" id="header-ubicacion" onclick="InvApp.toggleDropdown('ubicacion')">
+                            Todas las ubicaciones <span><i class="fa-solid fa-chevron-down"></i></span>
+                        </div>
+                        <div class="ms-options" id="options-ubicacion"></div>
+                    </div>
+                </div>
 
-                // Cierra los menús flotantes al hacer clic afuera
-                document.addEventListener('click', (e) => {
-                    if (!e.target.closest('.multi-select')) {
-                        document.querySelectorAll('.ms-options').forEach(el => el.classList.remove('show'));
-                    }
-                });
+                <!-- Select Múltiple: Familia -->
+                <div class="filter-group">
+                    <label>Familia (1ras 3 Letras)</label>
+                    <div class="multi-select" id="ms-familia">
+                        <div class="ms-header disabled" id="header-familia" onclick="InvApp.toggleDropdown('familia')">
+                            Todas las familias <span><i class="fa-solid fa-chevron-down"></i></span>
+                        </div>
+                        <div class="ms-options" id="options-familia"></div>
+                    </div>
+                </div>
 
-                // Binding de Filtros simples y Buscador
-                this.bodegaSel.addEventListener('change', () => { this.updateUbicaciones(); this.saveSession(); });
-                this.searchInput.addEventListener('input', () => { this.applyFilters(); this.saveSession(); });
-                this.consumosTgl.addEventListener('change', () => { this.applyFilters(); this.saveSession(); });
+                <!-- Switch Ocultar Stock -->
+                <div class="toggle-wrap" onclick="document.getElementById('inv-hide-zero').click()">
+                    <label>Ocultar Stock en 0</label>
+                    <input type="checkbox" id="inv-hide-zero" class="ios-switch" onclick="event.stopPropagation()">
+                </div>
+
+                <div style="flex:1;"></div>
+
+                <button class="btn-primary" id="inv-btn-pdf" disabled style="background:var(--text); color:white;">
+                    <i class="fa-solid fa-file-pdf"></i> Generar PDF
+                </button>
+            </aside>
+
+            <!-- Contenido Inventario -->
+            <main class="main-area">
+                <div class="metrics-bar">
+                    <div style="display:flex; gap:15px; align-items:center;">
+                        <div>Bodega: <span id="inv-lbl-bodega" class="tag">-</span></div>
+                        <div>Registros: <span id="inv-lbl-regs" class="tag">0</span></div>
+                    </div>
+                    <div id="inv-diff-container" style="display:none; font-size: 13px; font-weight: 800; color:var(--text);">
+                        Diferencia Total: <span id="inv-lbl-diff" style="margin-left:8px;">0</span>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table id="inv-table">
+                        <thead>
+                            <tr>
+                                <th onclick="InvApp.sortBy('ubicacion')">Ubicación <i class="fa-solid fa-sort" style="opacity:0.5; margin-left:4px;"></i></th>
+                                <th onclick="InvApp.sortBy('codigo')">Código <i class="fa-solid fa-sort" style="opacity:0.5; margin-left:4px;"></i></th>
+                                <th onclick="InvApp.sortBy('desc')">Descripción <i class="fa-solid fa-sort" style="opacity:0.5; margin-left:4px;"></i></th>
+                                <th onclick="InvApp.sortBy('stock')" style="text-align:center;">Stock Sist. <i class="fa-solid fa-sort" style="opacity:0.5; margin-left:4px;"></i></th>
+                                <th onclick="InvApp.sortBy('fisico')" style="text-align:center;">Stock Físico <i class="fa-solid fa-sort" style="opacity:0.5; margin-left:4px;"></i></th>
+                                <th onclick="InvApp.sortBy('diferencia')" style="text-align:center;">Diferencia <i class="fa-solid fa-sort" style="opacity:0.5; margin-left:4px;"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="inv-tbody">
+                            <tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-cloud-arrow-up"></i><p>Esperando Excel Maestro...</p></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <button class="btn-outline" id="inv-btn-prev" onclick="InvApp.changePage(-1)" style="width:auto; height:30px;">Anterior</button>
+                    <span class="page-info" id="inv-page-info">Página 1 de 1</span>
+                    <button class="btn-outline" id="inv-btn-next" onclick="InvApp.changePage(1)" style="width:auto; height:30px;">Siguiente</button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         TAB 2: IMPRESIÓN DE ETIQUETAS
+         ========================================================= -->
+    <div id="tab-lbl" class="tab-content">
+        <div class="app-layout">
+            
+            <!-- Sidebar Etiquetas -->
+            <aside class="sidebar" style="flex: 0 0 350px;">
                 
-                // Exportar PDF
-                this.btnPDF.addEventListener('click', () => this.exportPDF());
+                <div class="filter-group">
+                    <label>Bodega de Trabajo:</label>
+                    <select id="lbl-sel-bodega" class="pl-select" disabled>
+                        <option value="">Cargue maestro...</option>
+                    </select>
+                </div>
+                
+                <!-- Botón de extracción masiva -->
+                <button class="btn-outline" id="lbl-btn-bulk" style="margin-bottom:15px;" onclick="LblApp.cargarBodegaCompleta()">
+                    📦 Extraer productos (Stock > 0)
+                </button>
 
-                // Restaurar sesión al iniciar
-                this.restoreSession();
+                <!-- Buscador de Producto Individual -->
+                <div class="filter-group" style="position: relative;">
+                    <label>1. Buscar Producto Individual:</label>
+                    <input type="text" id="lbl-search" class="pl-input" placeholder="Código o descripción..." autocomplete="off" disabled>
+                    <div id="lbl-search-results" class="resultados-busqueda"></div>
+                </div>
+
+                <!-- Bloque dinámico Agregar Individual -->
+                <div id="lbl-add-block" style="display:none; background: var(--surface2); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--accent); margin-bottom: 15px;">
+                    <span id="lbl-add-txt" style="font-size: 11px; display:block; margin-bottom: 10px; line-height:1.3;"></span>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="number" id="lbl-add-qty" class="pl-input" value="1" min="1" style="width:70px;">
+                        <button class="btn-primary" style="margin:0; width:auto; flex:1;" onclick="LblApp.agregarIndividual()">➕ Ingresar</button>
+                    </div>
+                </div>
+
+                <!-- Buscador por Ubicación Completa -->
+                <div class="filter-group" style="position: relative;">
+                    <label>2. Filtrar por Ubicación Completa:</label>
+                    <input type="text" id="lbl-search-ubica" class="pl-input" placeholder="Ej: A1..." autocomplete="off" disabled>
+                    <div id="lbl-results-ubica" class="resultados-busqueda"></div>
+                </div>
+
+                <!-- Agregar Producto Manual -->
+                <div style="background: var(--surface); padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 15px;">
+                    <button style="border:none; background:transparent; width: 100%; text-align: left; font-weight: 700; color:var(--text); display:flex; justify-content: space-between; align-items:center; cursor:pointer;" onclick="LblApp.toggleManualAdd()">
+                        <span>✏️ Agregar Manualmente</span>
+                        <span id="lbl-manual-icon">➕</span>
+                    </button>
+                    <div id="lbl-manual-content" style="display: none; padding-top: 10px; margin-top: 10px; border-top: 1px solid var(--border-light);">
+                        <div class="fila-inputs">
+                            <input type="text" id="man-cod" class="pl-input" placeholder="Código *">
+                            <input type="text" id="man-desc" class="pl-input" placeholder="Descripción *">
+                        </div>
+                        <div class="fila-inputs">
+                            <input type="text" id="man-bod" class="pl-input" placeholder="Bodega">
+                            <input type="text" id="man-ubi" class="pl-input" placeholder="Ubicación">
+                        </div>
+                        <div class="fila-inputs">
+                            <input type="text" id="man-oc" class="pl-input" placeholder="O. Compra">
+                            <input type="number" id="man-cant" class="pl-input" placeholder="Cant." min="1" value="1">
+                        </div>
+                        <button class="btn-outline" style="margin-top: 5px;" onclick="LblApp.agregarManual()">Agregar a la lista</button>
+                    </div>
+                </div>
+
+                <hr style="border:0; border-top: 2px solid var(--border); margin: 5px 0 15px;">
+
+                <!-- Lista de Impresión Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label style="margin:0; font-size: 11px; font-weight:800; color: var(--accent); text-transform:uppercase;">Lista de Impresión</label>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn-ghost-danger" style="color:var(--accent); border-color:var(--accent);" onclick="LblApp.setAllQtyToOne()" title="Poner todas las cantidades en 1">⚡ Cant. 1</button>
+                        <button class="btn-ghost-danger" onclick="LblApp.limpiarCola()">🗑️ Vaciar</button>
+                    </div>
+                </div>
+                
+                <!-- Resumen Etiquetas -->
+                <div style="background: var(--surface2); padding: 10px; border-radius: var(--radius-sm); text-align: center; margin-bottom: 10px;">
+                    <span style="font-size: 11px; font-weight:700; color: var(--text-muted);">Total Etiquetas: <strong id="lbl-total-eti" style="color:var(--accent);">0</strong> | Hojas A4: <strong id="lbl-total-hoj" style="color:var(--accent);">0</strong></span>
+                </div>
+
+                <!-- Cola Table -->
+                <div style="flex:1; overflow-y:auto; border-radius: var(--radius-sm);">
+                    <table class="tabla-cola">
+                        <thead>
+                            <tr>
+                                <th>Cod. / Detalle</th>
+                                <th style="width: 50px; text-align: center;">Cant.</th>
+                                <th style="width: 30px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="lbl-cola-tbody">
+                            <tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-tertiary);">Cola vacía</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Acciones Print -->
+                <div style="display:flex; gap:10px; margin-top: 15px; flex-shrink:0;">
+                    <button class="btn-outline" style="flex:1;" onclick="LblApp.generarVistaPrevia()">👁️ Vista Previa</button>
+                    <button class="btn-primary" style="flex:1;" onclick="LblApp.imprimir()">🖨️ Imprimir</button>
+                </div>
+            </aside>
+
+            <!-- Vista Previa Etiquetas -->
+            <main class="lbl-preview-area">
+                <div id="lbl-msg-area" style="color: var(--text-tertiary); text-align: center; margin-top: 30vh;">
+                    <i class="fa-solid fa-tags" style="font-size: 3rem; margin-bottom: 1rem; opacity:0.5; color:var(--accent);"></i>
+                    <p style="font-size: 14px; font-weight:600;">Agrega productos a la cola y haz clic en Vista Previa.</p>
+                </div>
+                <div class="sheet-wrapper" id="lbl-print-container"></div>
+            </main>
+
+        </div>
+    </div>
+
+    <!-- =========================================================
+         SCRIPT PRINCIPAL (LÓGICA UNIFICADA)
+         ========================================================= -->
+    <script>
+        // Config PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // --- ESTADO Y CORE GLOBAL ---
+        const GlobalApp = {
+            data: [], // Array unificado de productos
+            
+            switchTab(tabId) {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                
+                document.getElementById('btn-tab-' + tabId).classList.add('active');
+                document.getElementById('tab-' + tabId).classList.add('active');
+
+                // Mostrar/Ocultar dropzone PDF según tab
+                document.getElementById('dz-pdf').style.display = tabId === 'lbl' ? 'flex' : 'none';
             },
 
-            // Normaliza para mapear cabeceras del excel eliminando espacios
+            clearData() {
+                if(confirm("¿Seguro que deseas borrar toda la memoria y registros cargados?")) {
+                    this.data = [];
+                    document.getElementById('file-excel').value = '';
+                    document.getElementById('file-pdf').value = '';
+                    document.getElementById('txt-excel-status').textContent = 'Alimenta ambos sistemas';
+                    document.getElementById('txt-pdf-status').textContent = 'Solo para etiquetas';
+                    
+                    InvApp.reset();
+                    LblApp.reset();
+                }
+            },
+
             normalizeStr(str) {
                 if (!str) return "";
                 return String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, '');
             },
-
-            // Normaliza para el Buscador Libre (Mantiene los espacios para separar palabras)
-            normalizeForSearch(str) {
+            
+            normalizeSearch(str) {
                 if (!str) return "";
                 return String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             },
 
-            // Abre o cierra las ventanas flotantes
-            toggleDropdown(id) {
-                const optionsDiv = document.getElementById(`options-${id}`);
-                const header = document.getElementById(`header-${id}`);
-                const isShowing = optionsDiv.classList.contains('show');
-                
-                // Cierra todos los demas
-                document.querySelectorAll('.ms-options').forEach(el => el.classList.remove('show'));
-                
-                // Abre el clickeado si no está desactivado
-                if (!isShowing && !header.classList.contains('disabled')) {
-                    optionsDiv.classList.add('show');
-                }
-            },
-
-            // Genera dinámicamente los checkboxes en la ventana flotante
-            populateMultiSelect(type, items, emptyText) {
-                const container = document.getElementById(`options-${type}`);
-                const header = document.getElementById(`header-${type}`);
-                container.innerHTML = '';
-                
-                if (items.length === 0) {
-                    header.innerHTML = `${emptyText} <span><i class="fa-solid fa-chevron-down"></i></span>`;
-                    header.classList.add('disabled');
-                    return;
-                }
-                
-                header.classList.remove('disabled');
-                header.innerHTML = `${emptyText} <span><i class="fa-solid fa-chevron-down"></i></span>`;
-                
-                items.forEach(item => {
-                    const label = document.createElement('label');
-                    label.className = 'ms-option-label';
-                    label.innerHTML = `<input type="checkbox" value="${item}" onchange="App.handleMultiSelectChange('${type}', '${emptyText}')"> ${item}`;
-                    container.appendChild(label);
-                });
-            },
-
-            // Se ejecuta cada vez que el usuario hace check/uncheck
-            handleMultiSelectChange(type, emptyText) {
-                const container = document.getElementById(`options-${type}`);
-                const header = document.getElementById(`header-${type}`);
-                const checkedCount = container.querySelectorAll('input:checked').length;
-                
-                if (checkedCount === 0) {
-                    header.innerHTML = `${emptyText} <span><i class="fa-solid fa-chevron-down"></i></span>`;
-                } else if (checkedCount === 1) {
-                    header.innerHTML = `1 seleccionada <span><i class="fa-solid fa-chevron-down"></i></span>`;
-                } else {
-                    header.innerHTML = `${checkedCount} seleccionadas <span><i class="fa-solid fa-chevron-down"></i></span>`;
-                }
-                
-                this.applyFilters();
-                this.saveSession();
-            },
-
-            processFile(file) {
-                this.fileName = file.name;
-                
-                // REPARACIÓN: Carita sonriente tipo emoticon de éxito
-                this.dropText.innerHTML = `<span style="color:var(--success); font-size: 1.1rem;"><i class="fa-solid fa-face-smile-beam" style="margin-right: 5px;"></i> Cargado:</span><br><b>${this.fileName}</b>`;
-                this.btnClearSession.style.display = 'block';
-                
+            processExcel(file) {
                 const reader = new FileReader();
+                document.getElementById('txt-excel-status').innerHTML = '<span style="color:var(--sys-yellow); font-weight:700;">Procesando...</span>';
+                
                 reader.onload = (e) => {
                     try {
                         const data = new Uint8Array(e.target.result);
@@ -496,445 +598,668 @@
                         const json = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
                         
                         if(json.length > 0) {
-                            this.rawData = json.map((row, index) => {
+                            this.data = json.map((row, index) => {
                                 const keys = Object.keys(row);
                                 const findK = (keywords) => keys.find(k => keywords.some(kw => this.normalizeStr(k).includes(kw)));
                                 
-                                // REPARACIÓN: Priorizar explícitamente "cód. almacén" antes de buscar la palabra general para evitar choques con otras columnas
                                 let kBod = keys.find(k => this.normalizeStr(k).includes('codalmacen')) || findK(['almacen', 'bodega']);
-                                
                                 const kUbi = findK(['ubicacion']);
                                 const kCod = findK(['nproducto', 'codigo', 'item']);
                                 const kDesc = findK(['descrip']);
-                                const kCant = findK(['cantidad', 'stock', 'sistema']);
+                                const kCant = findK(['cantidad', 'stock', 'sistema', 'base']);
                                 
                                 const codigoVal = String(row[kCod] || '').trim();
                                 const familiaVal = codigoVal.length >= 3 ? codigoVal.substring(0,3).toUpperCase() : 'OTRO';
-                                
+
                                 return {
                                     id: `item_${index}`,
-                                    bodega: String(row[kBod] || '').trim(),
-                                    ubicacion: String(row[kUbi] || '').trim(),
+                                    bodega: String(row[kBod] || 'S/B').trim(),
+                                    ubicacion: String(row[kUbi] || 'S/U').trim(),
                                     codigo: codigoVal,
                                     familia: familiaVal,
-                                    descripcion: String(row[kDesc] || '').trim(),
-                                    cantidad: parseFloat(row[kCant]) || 0,
+                                    desc: String(row[kDesc] || row[3] || '').trim(),
+                                    stock: parseFloat(row[kCant]) || 0,
                                     fisico: null 
                                 };
-                            }).filter(r => r.bodega !== '' || r.codigo !== '');
+                            }).filter(r => r.codigo !== '' && !r.codigo.toLowerCase().includes('nº producto'));
                             
-                            this.setupFilters();
-                            this.saveSession();
-                        } else {
-                            alert("El documento Excel está vacío.");
+                            document.getElementById('txt-excel-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Cargado (${this.data.length} reg)</span>`;
+                            
+                            // Cargar datos en módulos
+                            InvApp.loadData();
+                            LblApp.loadData();
                         }
                     } catch (error) {
-                        alert("Error al procesar el Excel. Verifique el formato.");
+                        document.getElementById('txt-excel-status').innerHTML = '<span style="color:var(--sys-red); font-weight:700;">Error</span>';
                         console.error(error);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        };
+
+        // Cierra los menús flotantes al hacer clic afuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.multi-select')) {
+                document.querySelectorAll('.ms-options').forEach(el => el.classList.remove('show'));
+            }
+            if(e.target.id !== 'lbl-search') document.getElementById('lbl-search-results').style.display = 'none';
+            if(e.target.id !== 'lbl-search-ubica') document.getElementById('lbl-results-ubica').style.display = 'none';
+        });
+
+        // --- MÓDULO 1: INVENTARIO FÍSICO ---
+        const InvApp = {
+            filtered: [],
+            currentPage: 1,
+            itemsPerPage: 50,
+            sortCol: null,
+            sortAsc: true,
+
+            reset() {
+                document.getElementById('inv-sel-bodega').innerHTML = '<option value="">Cargue maestro...</option>';
+                document.getElementById('inv-sel-bodega').disabled = true;
+                document.getElementById('inv-search').value = '';
+                document.getElementById('inv-search').disabled = true;
+                document.getElementById('inv-btn-pdf').disabled = true;
+                this.populateMultiSelect('ubicacion', [], 'Todas las ubicaciones');
+                this.populateMultiSelect('familia', [], 'Todas las familias');
+                this.filtered = [];
+                this.render();
+                document.getElementById('inv-diff-container').style.display = 'none';
+            },
+
+            loadData() {
+                const bodegas = [...new Set(GlobalApp.data.map(i => i.bodega))].sort();
+                const sel = document.getElementById('inv-sel-bodega');
+                sel.innerHTML = bodegas.map(b => `<option value="${b}">${b}</option>`).join('');
+                sel.disabled = false;
+                
+                document.getElementById('inv-search').disabled = false;
+                document.getElementById('inv-btn-pdf').disabled = false;
+                
+                this.updateMultiSelects();
+                this.applyFilters();
+            },
+
+            // Lógica Multi-Select para Filtros de Inventario
+            toggleDropdown(id) {
+                const optionsDiv = document.getElementById(`options-${id}`);
+                const header = document.getElementById(`header-${id}`);
+                const isShowing = optionsDiv.classList.contains('show');
+                document.querySelectorAll('.ms-options').forEach(el => el.classList.remove('show'));
+                if (!isShowing && !header.classList.contains('disabled')) {
+                    optionsDiv.classList.add('show');
+                }
+            },
+            
+            populateMultiSelect(type, items, emptyText) {
+                const container = document.getElementById(`options-${type}`);
+                const header = document.getElementById(`header-${type}`);
+                container.innerHTML = '';
+                if (items.length === 0) {
+                    header.innerHTML = `${emptyText} <span><i class="fa-solid fa-chevron-down"></i></span>`;
+                    header.classList.add('disabled');
+                    return;
+                }
+                header.classList.remove('disabled');
+                header.innerHTML = `${emptyText} <span><i class="fa-solid fa-chevron-down"></i></span>`;
+                
+                items.forEach(item => {
+                    const label = document.createElement('label');
+                    label.className = 'ms-option-label';
+                    label.innerHTML = `<input type="checkbox" value="${item}" onchange="InvApp.handleMultiChange('${type}', '${emptyText}')"> ${item}`;
+                    container.appendChild(label);
+                });
+            },
+            
+            handleMultiChange(type, emptyText) {
+                const container = document.getElementById(`options-${type}`);
+                const header = document.getElementById(`header-${type}`);
+                const checkedCount = container.querySelectorAll('input:checked').length;
+                
+                if (checkedCount === 0) header.innerHTML = `${emptyText} <span><i class="fa-solid fa-chevron-down"></i></span>`;
+                else if (checkedCount === 1) header.innerHTML = `1 seleccionada <span><i class="fa-solid fa-chevron-down"></i></span>`;
+                else header.innerHTML = `${checkedCount} seleccionadas <span><i class="fa-solid fa-chevron-down"></i></span>`;
+                
+                this.applyFilters();
+            },
+
+            updateMultiSelects() {
+                const bodega = document.getElementById('inv-sel-bodega').value;
+                const ubicaciones = [...new Set(GlobalApp.data.filter(i => i.bodega === bodega).map(i => i.ubicacion))].sort();
+                this.populateMultiSelect('ubicacion', ubicaciones, 'Todas las ubicaciones');
+                
+                const familias = [...new Set(GlobalApp.data.map(i => i.familia))].sort();
+                this.populateMultiSelect('familia', familias, 'Todas las familias');
+            },
+
+            applyFilters() {
+                const bodega = document.getElementById('inv-sel-bodega').value;
+                const hideZero = document.getElementById('inv-hide-zero').checked;
+                
+                const searchVal = GlobalApp.normalizeSearch(document.getElementById('inv-search').value).trim();
+                const searchTerms = searchVal.split(' ').filter(term => term !== '');
+                
+                const selUbiArray = Array.from(document.querySelectorAll('#options-ubicacion input:checked')).map(cb => cb.value);
+                const selFamArray = Array.from(document.querySelectorAll('#options-familia input:checked')).map(cb => cb.value);
+
+                this.filtered = GlobalApp.data.filter(item => {
+                    let match = item.bodega === bodega;
+                    if(selUbiArray.length > 0) match = match && selUbiArray.includes(item.ubicacion);
+                    if(selFamArray.length > 0) match = match && selFamArray.includes(item.familia);
+                    if(hideZero) match = match && item.stock > 0;
+                    
+                    if(searchTerms.length > 0) {
+                        const descNorm = GlobalApp.normalizeSearch(item.desc);
+                        const codNorm = GlobalApp.normalizeSearch(item.codigo);
+                        const matchSearch = searchTerms.every(term => descNorm.includes(term) || codNorm.includes(term));
+                        match = match && matchSearch;
+                    }
+                    return match;
+                });
+
+                document.getElementById('inv-lbl-bodega').textContent = bodega || '-';
+                document.getElementById('inv-lbl-regs').textContent = this.filtered.length;
+                
+                this.doSort();
+                this.currentPage = 1;
+                this.render();
+                this.updateDiff();
+            },
+
+            sortBy(col) {
+                if (this.sortCol === col) this.sortAsc = !this.sortAsc;
+                else { this.sortCol = col; this.sortAsc = true; }
+                this.doSort();
+                this.render();
+            },
+
+            doSort() {
+                if(!this.sortCol) return;
+                this.filtered.sort((a, b) => {
+                    let valA = a[this.sortCol], valB = b[this.sortCol];
+                    
+                    if (this.sortCol === 'diferencia') {
+                        valA = (a.fisico !== null ? a.fisico - a.stock : -999999);
+                        valB = (b.fisico !== null ? b.fisico - b.stock : -999999);
+                        return this.sortAsc ? (valA - valB) : (valB - valA);
+                    }
+                    if (this.sortCol === 'fisico' || this.sortCol === 'stock') {
+                        valA = valA !== null ? Number(valA) : -999999;
+                        valB = valB !== null ? Number(valB) : -999999;
+                        return this.sortAsc ? valA - valB : valB - valA;
+                    }
+                    valA = String(valA || ''); valB = String(valB || '');
+                    const cmp = valA.localeCompare(valB, undefined, { numeric: true });
+                    return this.sortAsc ? cmp : -cmp;
+                });
+            },
+
+            changePage(delta) {
+                const total = Math.ceil(this.filtered.length / this.itemsPerPage);
+                this.currentPage += delta;
+                if(this.currentPage < 1) this.currentPage = 1;
+                if(this.currentPage > total) this.currentPage = total;
+                this.render();
+            },
+
+            updateFisico(id, val) {
+                const item = GlobalApp.data.find(x => x.id === id);
+                if(item) {
+                    item.fisico = val !== '' ? parseFloat(val) : null;
+                    const diffCell = document.getElementById(`diff-${id}`);
+                    if(diffCell) {
+                        if(item.fisico === null) {
+                            diffCell.textContent = '-'; diffCell.className = 'text-neutral';
+                        } else {
+                            const diff = item.fisico - item.stock;
+                            diffCell.textContent = diff > 0 ? `+${diff}` : diff;
+                            diffCell.className = diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-neutral';
+                        }
+                    }
+                    this.updateDiff();
+                }
+            },
+
+            updateDiff() {
+                let total = 0, hasEdits = false;
+                this.filtered.forEach(i => {
+                    if(i.fisico !== null) { total += (i.fisico - i.stock); hasEdits = true; }
+                });
+                const c = document.getElementById('inv-diff-container');
+                if(hasEdits) {
+                    const cls = total > 0 ? 'text-success' : total < 0 ? 'text-danger' : 'text-neutral';
+                    document.getElementById('inv-lbl-diff').className = cls;
+                    document.getElementById('inv-lbl-diff').textContent = (total > 0 ? '+' : '') + total;
+                    c.style.display = 'block';
+                } else c.style.display = 'none';
+            },
+
+            render() {
+                const tbody = document.getElementById('inv-tbody');
+                if(this.filtered.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-folder-open"></i><p>Sin datos con los filtros actuales.</p></div></td></tr>`;
+                    return;
+                }
+
+                const total = Math.ceil(this.filtered.length / this.itemsPerPage);
+                const start = (this.currentPage - 1) * this.itemsPerPage;
+                const pageData = this.filtered.slice(start, start + this.itemsPerPage);
+
+                document.getElementById('inv-page-info').textContent = `Página ${this.currentPage} de ${total}`;
+                document.getElementById('inv-btn-prev').disabled = this.currentPage === 1;
+                document.getElementById('inv-btn-next').disabled = this.currentPage === total;
+
+                tbody.innerHTML = pageData.map(r => {
+                    const fVal = r.fisico !== null ? r.fisico : '';
+                    let diffHtml = '<td id="diff-'+r.id+'" class="text-neutral" style="text-align:center; font-size:14px; font-weight:800;">-</td>';
+                    if(r.fisico !== null) {
+                        const diff = r.fisico - r.stock;
+                        const cls = diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-neutral';
+                        diffHtml = `<td id="diff-${r.id}" class="${cls}" style="text-align:center; font-size:14px;">${diff > 0 ? '+' : ''}${diff}</td>`;
+                    }
+
+                    return `<tr>
+                        <td>${r.ubicacion}</td>
+                        <td style="font-family:monospace; font-weight:800; color:var(--accent); font-size:13px;">${r.codigo}</td>
+                        <td>${r.desc}</td>
+                        <td style="text-align:center; font-weight:700; font-family:monospace; font-size:13px;">${r.stock}</td>
+                        <td style="text-align:center;"><input type="number" class="input-fisico" placeholder="0" value="${fVal}" oninput="InvApp.updateFisico('${r.id}', this.value)"></td>
+                        ${diffHtml}
+                    </tr>`;
+                }).join('');
+            },
+
+            exportPDF() {
+                if(this.filtered.length === 0) return;
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'pt', 'letter');
+                const dateStr = new Date().toLocaleDateString('es-CL');
+                const bodega = document.getElementById('inv-sel-bodega').value;
+
+                doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+                doc.setTextColor(44, 62, 80); // Color oscuro
+                doc.text('HOJA DE TOMA DE INVENTARIO', doc.internal.pageSize.width / 2, 40, { align: 'center' });
+                doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+                doc.text(`Bodega: ${bodega}`, 40, 65);
+                doc.text('Responsable: ____________________', doc.internal.pageSize.width - 40, 55, { align: 'right' });
+                doc.text(`Fecha: ${dateStr}`, doc.internal.pageSize.width - 40, 72, { align: 'right' });
+
+                const data = this.filtered.map(r => [ r.ubicacion, r.codigo, r.desc, r.stock, '' ]);
+
+                doc.autoTable({
+                    startY: 85, 
+                    head: [['Ubicación', 'Código', 'Descripción', 'Sist.', 'Físico']],
+                    body: data,
+                    styles: { fontSize: 8, cellPadding: 6, lineColor: [200, 200, 200] },
+                    headStyles: { fillColor: [92, 164, 211], textColor: 255, halign: 'center' }, /* Accent Color */
+                    columnStyles: { 0: { cellWidth: 70 }, 1: { cellWidth: 70, fontStyle: 'bold' }, 2: { cellWidth: 'auto' }, 3: { cellWidth: 40, halign: 'center' }, 4: { cellWidth: 90 } },
+                    theme: 'grid'
+                });
+                doc.save(`Inventario_${bodega}_${dateStr}.pdf`);
+            }
+        };
+
+        // --- MÓDULO 2: IMPRESIÓN ETIQUETAS ---
+        const LblApp = {
+            queue: [],
+            selectedProduct: null,
+
+            reset() {
+                document.getElementById('lbl-sel-bodega').innerHTML = '<option value="">Cargue maestro...</option>';
+                document.getElementById('lbl-sel-bodega').disabled = true;
+                document.getElementById('lbl-search').value = '';
+                document.getElementById('lbl-search').disabled = true;
+                document.getElementById('lbl-search-ubica').value = '';
+                document.getElementById('lbl-search-ubica').disabled = true;
+                
+                this.queue = [];
+                this.renderQueue();
+                document.getElementById('lbl-print-container').innerHTML = '';
+            },
+
+            loadData() {
+                const bodegas = [...new Set(GlobalApp.data.map(i => i.bodega))].sort();
+                const sel = document.getElementById('lbl-sel-bodega');
+                sel.innerHTML = bodegas.map(b => `<option value="${b}">${b}</option>`).join('');
+                sel.disabled = false;
+                document.getElementById('lbl-search').disabled = false;
+                document.getElementById('lbl-search-ubica').disabled = false;
+            },
+
+            cargarBodegaCompleta() {
+                const bodega = document.getElementById('lbl-sel-bodega').value;
+                if(!bodega) return;
+                
+                let added = 0;
+                GlobalApp.data.forEach(p => {
+                    if(p.bodega === bodega && p.stock > 0) {
+                        if(!this.queue.find(i => i.codigo === p.codigo)) {
+                            this.queue.push({ codigo: p.codigo, desc: p.desc, ubicacion: p.ubicacion, bodega: p.bodega, cantidad: 1, oc: "" });
+                            added++;
+                        }
+                    }
+                });
+                if(added > 0) this.renderQueue();
+            },
+
+            // Buscador 1: Individual
+            searchIndividual(term) {
+                const resDiv = document.getElementById('lbl-search-results');
+                resDiv.innerHTML = '';
+                if(!term) { resDiv.style.display = 'none'; return; }
+                
+                const bodega = document.getElementById('lbl-sel-bodega').value;
+                const match = GlobalApp.data.filter(p => p.bodega === bodega && (p.codigo.toLowerCase().includes(term) || p.desc.toLowerCase().includes(term)));
+                
+                if(match.length > 0) {
+                    resDiv.innerHTML = match.map(p => `
+                        <div class="resultado-item" onclick="LblApp.selectSearch('${p.id}')">
+                            <div style="font-size:11px; color:var(--text);"><strong>${p.codigo}</strong><br>${p.desc}</div>
+                            <div style="text-align:right;"><span class="badge-ubica">Ub: ${p.ubicacion}</span><br><span class="badge-stock" style="margin-top:2px; display:inline-block;">Stk: ${p.stock}</span></div>
+                        </div>
+                    `).join('');
+                    resDiv.style.display = 'block';
+                } else resDiv.style.display = 'none';
+            },
+
+            selectSearch(id) {
+                this.selectedProduct = GlobalApp.data.find(p => p.id === id);
+                document.getElementById('lbl-search').value = '';
+                document.getElementById('lbl-search-results').style.display = 'none';
+                
+                document.getElementById('lbl-add-txt').innerHTML = `<strong style="color:var(--accent);">${this.selectedProduct.codigo}</strong><br><span style="color:var(--text);">${this.selectedProduct.desc}</span>`;
+                document.getElementById('lbl-add-qty').value = this.selectedProduct.stock > 0 ? this.selectedProduct.stock : 1;
+                document.getElementById('lbl-add-block').style.display = 'block';
+            },
+
+            agregarIndividual() {
+                if(!this.selectedProduct) return;
+                let q = parseInt(document.getElementById('lbl-add-qty').value) || 1;
+                this.queue.push({
+                    codigo: this.selectedProduct.codigo, desc: this.selectedProduct.desc,
+                    ubicacion: this.selectedProduct.ubicacion, bodega: this.selectedProduct.bodega,
+                    cantidad: q, oc: ""
+                });
+                this.renderQueue();
+                document.getElementById('lbl-add-block').style.display = 'none';
+                this.selectedProduct = null;
+            },
+
+            // Buscador 2: Por Ubicación
+            searchUbicacion(term) {
+                const resDiv = document.getElementById('lbl-results-ubica');
+                resDiv.innerHTML = '';
+                if(!term) { resDiv.style.display = 'none'; return; }
+
+                const bodega = document.getElementById('lbl-sel-bodega').value;
+                let ubicacionesMatch = [];
+                
+                GlobalApp.data.forEach(p => { 
+                    if(p.bodega === bodega && p.ubicacion.toLowerCase().includes(term) && !ubicacionesMatch.includes(p.ubicacion)) { 
+                        ubicacionesMatch.push(p.ubicacion); 
+                    } 
+                });
+                
+                if (ubicacionesMatch.length > 0) {
+                    resDiv.innerHTML = ubicacionesMatch.map(ub => {
+                        const count = GlobalApp.data.filter(p => p.bodega === bodega && p.ubicacion === ub).length;
+                        return `
+                            <div class="resultado-item" onclick="LblApp.cargarUbicacion('${ub}')">
+                                <div style="color:var(--text);">📍 Ub: <strong>${ub}</strong></div>
+                                <div><span class="badge-stock">${count} ítems</span></div>
+                            </div>
+                        `;
+                    }).join('');
+                    resDiv.style.display = 'block';
+                } else resDiv.style.display = 'none';
+            },
+
+            cargarUbicacion(ubiName) {
+                document.getElementById('lbl-search-ubica').value = '';
+                document.getElementById('lbl-results-ubica').style.display = 'none';
+                
+                const bodega = document.getElementById('lbl-sel-bodega').value;
+                const matchProds = GlobalApp.data.filter(p => p.bodega === bodega && p.ubicacion === ubiName);
+                
+                matchProds.forEach(p => {
+                    const existe = this.queue.find(item => item.codigo === p.codigo);
+                    if(!existe) { 
+                        this.queue.push({ codigo: p.codigo, desc: p.desc, ubicacion: p.ubicacion, bodega: p.bodega, cantidad: p.stock > 0 ? p.stock : 1, oc: "" }); 
+                    }
+                });
+                this.renderQueue();
+            },
+
+            // Sección Manual
+            toggleManualAdd() {
+                const content = document.getElementById('lbl-manual-content');
+                const icon = document.getElementById('lbl-manual-icon');
+                if (content.style.display === 'none') {
+                    content.style.display = 'block'; icon.innerText = '➖';
+                } else {
+                    content.style.display = 'none'; icon.innerText = '➕';
+                }
+            },
+
+            agregarManual() {
+                const cod = document.getElementById('man-cod').value.trim();
+                const desc = document.getElementById('man-desc').value.trim();
+                const bod = document.getElementById('man-bod').value.trim() || document.getElementById('lbl-sel-bodega').value;
+                const ubi = document.getElementById('man-ubi').value.trim() || "S/U";
+                const oc = document.getElementById('man-oc').value.trim();
+                let cant = parseInt(document.getElementById('man-cant').value);
+                
+                if (isNaN(cant) || cant < 1) cant = 1;
+
+                if (!cod || !desc) { alert("Los campos 'Código' y 'Descripción' son obligatorios."); return; }
+
+                this.queue.push({ codigo: cod, desc: desc, ubicacion: ubi, bodega: bod, cantidad: cant, oc: oc });
+                this.renderQueue();
+                
+                document.getElementById('man-cod').value = ''; document.getElementById('man-desc').value = '';
+                document.getElementById('man-bod').value = ''; document.getElementById('man-ubi').value = '';
+                document.getElementById('man-oc').value = ''; document.getElementById('man-cant').value = '1';
+            },
+
+            // Acciones sobre la cola
+            setAllQtyToOne() {
+                if (this.queue.length === 0) return;
+                this.queue.forEach(item => item.cantidad = 1);
+                this.renderQueue();
+            },
+
+            limpiarCola() {
+                if(confirm("¿Vaciar cola de impresión?")) {
+                    this.queue = [];
+                    this.renderQueue();
+                    document.getElementById('lbl-print-container').innerHTML = '';
+                    document.getElementById('lbl-msg-area').style.display = 'block';
+                }
+            },
+
+            updateQty(i, val) { this.queue[i].cantidad = parseInt(val) || 0; this.renderQueue(); },
+            removeItem(i) { this.queue.splice(i, 1); this.renderQueue(); },
+
+            renderQueue() {
+                const tbody = document.getElementById('lbl-cola-tbody');
+                let tEti = 0;
+                
+                if(this.queue.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-tertiary);">Cola vacía</td></tr>';
+                } else {
+                    tbody.innerHTML = this.queue.map((item, i) => {
+                        tEti += item.cantidad;
+                        const ocBadge = item.oc ? `<span style="background:var(--accent); color:var(--surface); padding:1px 4px; border-radius:3px; font-size:9px; font-weight:800; margin-left:4px;">OC ${item.oc}</span>` : '';
+                        return `
+                        <tr>
+                            <td><strong style="font-size:11px; color:var(--text);">${item.codigo}</strong>${ocBadge}<br><div style="font-size:10px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;" title="${item.desc}">${item.desc}</div></td>
+                            <td style="text-align:center;"><input type="number" class="input-tabla-cantidad" value="${item.cantidad}" oninput="LblApp.updateQty(${i}, this.value)"></td>
+                            <td style="text-align:center;"><button class="btn-ghost-danger" style="padding:4px; height:auto; display:inline-block;" onclick="LblApp.removeItem(${i})"><i class="fa-solid fa-xmark"></i></button></td>
+                        </tr>`;
+                    }).join('');
+                }
+                
+                document.getElementById('lbl-total-eti').textContent = tEti;
+                document.getElementById('lbl-total-hoj').textContent = Math.ceil(tEti / 30);
+            },
+
+            // PDF OC
+            processPdfOC(file) {
+                document.getElementById('txt-pdf-status').innerHTML = '<span style="color:var(--sys-yellow); font-weight:700;">Procesando...</span>';
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const typedarray = new Uint8Array(e.target.result);
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        let text = "";
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const textContent = await page.getTextContent();
+                            text += textContent.items.map(item => item.str).join("\n") + "\n";
+                        }
+                        
+                        // Parse (Misma lógica Adetec)
+                        let nroOc = "";
+                        const matchOc = text.match(/ORDEN DE COMPRA\s*(?:N[°º. ]+)?\s*([A-Za-z0-9-]+)/i);
+                        if (matchOc && matchOc[1]) { let m = matchOc[1].trim().match(/(\d+)$/); nroOc = m ? parseInt(m[1],10).toString() : matchOc[1].trim(); }
+
+                        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                        let added = 0;
+                        const currentBodega = document.getElementById('lbl-sel-bodega').value || "S/B";
+
+                        for (let i = 0; i < lines.length; i++) {
+                            if (lines[i].includes('|')) {
+                                let parts = lines[i].split('|');
+                                let cod = parts[0].replace(/[^A-Za-z0-9_-]/g, '').trim();
+                                let dsc = parts[1].replace(/["']/g, '').trim();
+                                let cant = 1;
+                                for (let j = 1; j <= 3; j++) {
+                                    if (i - j >= 0) {
+                                        let lp = lines[i - j].trim();
+                                        if (/^\d+([,.]\d+)?$/.test(lp)) { cant = parseInt(lp.split(/[,.]/)[0]) || 1; break; }
+                                    }
+                                }
+                                if (cod) {
+                                    let match = GlobalApp.data.find(p => p.codigo.toLowerCase() === cod.toLowerCase());
+                                    this.queue.push({
+                                        codigo: cod, desc: match ? match.desc : dsc,
+                                        ubicacion: match ? match.ubicacion : "OC-PDF",
+                                        bodega: match ? match.bodega : currentBodega,
+                                        cantidad: cant, oc: nroOc
+                                    });
+                                    added++;
+                                }
+                            }
+                        }
+                        this.renderQueue();
+                        document.getElementById('txt-pdf-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Cargado (${added} eti)</span>`;
+                    } catch (err) {
+                        document.getElementById('txt-pdf-status').innerHTML = '<span style="color:var(--sys-red); font-weight:700;">Error PDF</span>';
                     }
                 };
                 reader.readAsArrayBuffer(file);
             },
 
-            setupFilters() {
-                const bodegas = [...new Set(this.rawData.map(i => i.bodega).filter(b => b !== ''))].sort();
-                this.bodegaSel.innerHTML = '';
-                bodegas.forEach(b => this.bodegaSel.innerHTML += `<option value="${b}">${b}</option>`);
-                this.bodegaSel.disabled = bodegas.length === 0;
-                
-                const familias = [...new Set(this.rawData.map(i => i.familia))].sort();
-                this.populateMultiSelect('familia', familias, 'Todas las familias');
-
-                this.searchInput.disabled = false;
-                this.btnPDF.disabled = false;
-                this.updateUbicaciones(); 
-            },
-
-            updateUbicaciones() {
-                const selBodega = this.bodegaSel.value;
-                const ubicaciones = [...new Set(this.rawData
-                    .filter(i => i.bodega === selBodega)
-                    .map(i => i.ubicacion)
-                    .filter(u => u !== ''))].sort();
-                    
-                this.populateMultiSelect('ubicacion', ubicaciones, 'Todas las ubicaciones');
-                this.applyFilters();
-            },
-
-            applyFilters() {
-                const selBodega = this.bodegaSel.value;
-                const hideZero = this.consumosTgl.checked;
-                const searchVal = this.normalizeForSearch(this.searchInput.value).trim();
-                const searchTerms = searchVal.split(' ').filter(term => term !== '');
-                
-                const selUbiArray = Array.from(document.querySelectorAll('#options-ubicacion input:checked')).map(cb => cb.value);
-                const selFamArray = Array.from(document.querySelectorAll('#options-familia input:checked')).map(cb => cb.value);
-                
-                this.filteredData = this.rawData.filter(item => {
-                    let match = item.bodega === selBodega;
-                    
-                    if (selUbiArray.length > 0) match = match && selUbiArray.includes(item.ubicacion);
-                    if (selFamArray.length > 0) match = match && selFamArray.includes(item.familia);
-                    if (hideZero) match = match && item.cantidad > 0;
-                    
-                    // Lógica del buscador de texto (busca en Código y Descripción)
-                    if (searchTerms.length > 0) {
-                        const descNorm = this.normalizeForSearch(item.descripcion);
-                        const codNorm = this.normalizeForSearch(item.codigo);
-                        // Exige que todas las palabras escritas se encuentren
-                        const matchSearch = searchTerms.every(term => descNorm.includes(term) || codNorm.includes(term));
-                        match = match && matchSearch;
-                    }
-
-                    return match;
-                });
-                
-                document.getElementById('lblBodega').textContent = selBodega || '-';
-                document.getElementById('lblRegistros').textContent = this.filteredData.length;
-                document.getElementById('metricsContainer').style.display = 'flex';
-                
-                // Aplicar el ordenamiento existente a la data recién filtrada
-                this.applySort();
-                
-                this.currentPage = 1;
-                this.renderTable();
-                this.updateTotalDiff();
-            },
-            
-            // --- LÓGICA DE ORDENAMIENTO ---
-            handleSort(col) {
-                // Si hace click en la misma columna, invierte el orden. Si no, selecciona la nueva columna (ascendente)
-                if (this.sortCol === col) {
-                    this.sortAsc = !this.sortAsc;
-                } else {
-                    this.sortCol = col;
-                    this.sortAsc = true;
-                }
-                
-                this.applySort();
-                this.currentPage = 1;
-                this.renderTable();
-            },
-            
-            applySort() {
-                if (!this.sortCol) return; 
-                
-                this.filteredData.sort((a, b) => {
-                    let valA = a[this.sortCol];
-                    let valB = b[this.sortCol];
-                    
-                    if (this.sortCol === 'diferencia') {
-                        valA = (a.fisico !== null ? a.fisico - a.cantidad : -999999);
-                        valB = (b.fisico !== null ? b.fisico - b.cantidad : -999999);
-                        return this.sortAsc ? (valA - valB) : (valB - valA);
-                    }
-                    
-                    if (this.sortCol === 'cantidad' || this.sortCol === 'fisico') {
-                        valA = valA !== null ? Number(valA) : -999999;
-                        valB = valB !== null ? Number(valB) : -999999;
-                        return this.sortAsc ? (valA - valB) : (valB - valA);
-                    }
-                    
-                    valA = String(valA || '');
-                    valB = String(valB || '');
-                    
-                    const comparison = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
-                    return this.sortAsc ? comparison : -comparison;
-                });
-            },
-            
-            getSortIcon(col) {
-                if (this.sortCol !== col) return '<i class="fa-solid fa-sort"></i>';
-                return this.sortAsc ? '<i class="fa-solid fa-sort-up"></i>' : '<i class="fa-solid fa-sort-down"></i>';
-            },
-
-            changePage(delta) {
-                const totalPages = Math.ceil(this.filteredData.length / this.itemsPerPage);
-                this.currentPage += delta;
-                if (this.currentPage < 1) this.currentPage = 1;
-                if (this.currentPage > totalPages) this.currentPage = totalPages;
-                this.renderTable();
-            },
-
-            setTab(tabId) {
-                this.currentTab = tabId;
-                document.getElementById('tabPrint').classList.toggle('active', tabId === 'print');
-                document.getElementById('tabEdit').classList.toggle('active', tabId === 'edit');
-                
-                this.btnPDF.style.display = tabId === 'print' ? 'flex' : 'none';
-                
-                this.currentPage = 1;
-                this.renderTable();
-                this.updateTotalDiff();
-            },
-
-            updateFisico(id, value) {
-                const item = this.rawData.find(x => x.id === id);
-                if (item) {
-                    item.fisico = value !== '' ? parseFloat(value) : null;
-                    
-                    const diffCell = document.getElementById(`diff-${id}`);
-                    if (diffCell) {
-                        if (item.fisico === null) {
-                            diffCell.textContent = '-';
-                            diffCell.className = 'diff-cell text-neutral';
-                        } else {
-                            const diff = item.fisico - item.cantidad;
-                            diffCell.textContent = diff > 0 ? `+${diff}` : diff;
-                            diffCell.className = `diff-cell ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-neutral'}`;
-                        }
-                    }
-                    this.updateTotalDiff();
-                    this.saveSession(); 
-                }
-            },
-
-            updateTotalDiff() {
-                let total = 0;
-                let hasEdits = false;
-                
-                this.filteredData.forEach(item => {
-                    if (item.fisico !== null) {
-                        total += (item.fisico - item.cantidad);
-                        hasEdits = true;
-                    }
+            // Generación y Drag & Drop
+            generarVistaPrevia() {
+                let flattened = [];
+                this.queue.forEach(item => {
+                    for (let i = 0; i < item.cantidad; i++) flattened.push({...item});
                 });
 
-                const container = document.getElementById('totalDiffContainer');
+                if (flattened.length === 0) return;
                 
-                if (this.currentTab === 'edit' && hasEdits) {
-                    const colorCls = total > 0 ? 'text-success' : total < 0 ? 'text-danger' : 'text-neutral';
-                    const sign = total > 0 ? '+' : '';
-                    container.innerHTML = `<strong>Diferencia Total:</strong> <span class="diff-cell ${colorCls}" style="margin-left: 8px;">${sign}${total}</span>`;
-                    container.style.display = 'block';
-                } else {
-                    container.style.display = 'none';
-                }
-            },
+                document.getElementById('lbl-msg-area').style.display = 'none';
+                const cont = document.getElementById('lbl-print-container');
+                cont.innerHTML = '';
 
-            renderTable() {
-                if (this.filteredData.length === 0) {
-                    this.tableContainer.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fa-solid fa-folder-open"></i>
-                            <p>No se encontraron datos con los filtros actuales.</p>
-                        </div>`;
-                    document.getElementById('paginationContainer').style.display = 'none';
-                    return;
-                }
+                const perPage = 30;
+                const pages = Math.ceil(flattened.length / perPage);
+                let idx = 0;
 
-                const totalPages = Math.ceil(this.filteredData.length / this.itemsPerPage);
-                const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-                const pageData = this.filteredData.slice(startIndex, startIndex + this.itemsPerPage);
-                
-                document.getElementById('paginationContainer').style.display = 'flex';
-                document.getElementById('pageInfo').textContent = `Página ${this.currentPage} de ${totalPages}`;
-                document.getElementById('btnPrev').disabled = this.currentPage === 1;
-                document.getElementById('btnNext').disabled = this.currentPage === totalPages;
-
-                const isEdit = this.currentTab === 'edit';
-                
-                const getActiveCls = (col) => this.sortCol === col ? 'sortable active' : 'sortable';
-
-                let html = `<table><thead><tr>
-                    <th class="${getActiveCls('ubicacion')}" onclick="App.handleSort('ubicacion')">Ubicación ${this.getSortIcon('ubicacion')}</th>
-                    <th class="${getActiveCls('codigo')}" onclick="App.handleSort('codigo')">Código ${this.getSortIcon('codigo')}</th>
-                    <th class="${getActiveCls('descripcion')}" onclick="App.handleSort('descripcion')">Descripción ${this.getSortIcon('descripcion')}</th>
-                    <th class="${getActiveCls('cantidad')}" style="text-align:center;" onclick="App.handleSort('cantidad')">Stock Sist. ${this.getSortIcon('cantidad')}</th>
-                    <th class="${getActiveCls('fisico')}" style="text-align:center;" onclick="App.handleSort('fisico')">Stock Físico ${this.getSortIcon('fisico')}</th>`;
-                
-                if (isEdit) {
-                    html += `<th class="${getActiveCls('diferencia')}" style="text-align:center;" onclick="App.handleSort('diferencia')">Diferencia ${this.getSortIcon('diferencia')}</th>`;
-                }
-                
-                html += `</tr></thead><tbody>`;
-
-                pageData.forEach(row => {
-                    const sisStr = row.cantidad;
-                    let fisStr = '';
-                    let diffHtml = '';
-
-                    if (isEdit) {
-                        const val = row.fisico !== null ? row.fisico : '';
-                        fisStr = `<input type="number" class="input-fisico" placeholder="0" value="${val}" 
-                                   oninput="App.updateFisico('${row.id}', this.value)">`;
+                for (let h = 0; h < pages; h++) {
+                    const page = document.createElement('div'); page.className = 'page';
+                    const grid = document.createElement('div'); grid.className = 'label-grid';
+                    
+                    for (let e = 0; e < perPage; e++) {
+                        const slot = document.createElement('div'); slot.className = 'label-slot';
+                        LblApp.makeDroppable(slot);
                         
-                        if (row.fisico !== null) {
-                            const diff = row.fisico - row.cantidad;
-                            const colorCls = diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-neutral';
-                            const sign = diff > 0 ? '+' : '';
-                            diffHtml = `<td id="diff-${row.id}" class="diff-cell ${colorCls}">${sign}${diff}</td>`;
-                        } else {
-                            diffHtml = `<td id="diff-${row.id}" class="diff-cell text-neutral">-</td>`;
+                        if (idx < flattened.length) {
+                            const item = flattened[idx];
+                            const content = document.createElement('div');
+                            content.className = 'label-content'; content.draggable = true;
+                            LblApp.makeDraggable(content);
+                            
+                            let redCls = (item.ubicacion === "OC-PDF" || item.ubicacion === "S/U") ? "val-red" : "";
+                            let blueCls = item.oc ? "val-blue" : "";
+                            
+                            content.innerHTML = `
+                                <div class="left-col">
+                                    <div class="data-group"><div class="t-title">BODEGA</div><div class="t-value">${item.bodega}</div></div>
+                                    <div class="data-group"><div class="t-title">UBICACIÓN</div><div class="t-value ${redCls}">${item.ubicacion || '-'}</div></div>
+                                    <div class="data-group"><div class="t-title">O. COMPRA</div><div class="t-value ${blueCls}">${item.oc || '-'}</div></div>
+                                </div>
+                                <div class="divider-print"></div>
+                                <div class="right-col">
+                                    <div class="t-desc" title="${item.desc}">${item.desc}</div>
+                                    <div class="t-code">${item.codigo}</div>
+                                </div>
+                            `;
+                            slot.appendChild(content); 
+                            idx++;
                         }
-                    } else {
-                        // En la vista de impresión, mostramos el stock físico capturado solo si existe (solo lectura)
-                        fisStr = row.fisico !== null ? row.fisico : '';
+                        grid.appendChild(slot);
                     }
-
-                    html += `<tr>
-                        <td>${row.ubicacion}</td>
-                        <td><strong>${row.codigo}</strong></td>
-                        <td>${row.descripcion}</td>
-                        <td style="text-align:center;">${sisStr}</td>
-                        <td style="text-align:center;">${fisStr}</td>
-                        ${isEdit ? diffHtml : ''}
-                    </tr>`;
-                });
-
-                html += `</tbody></table>`;
-                this.tableContainer.innerHTML = html;
-            },
-
-            // --- SISTEMA DE MEMORIA (LOCAL STORAGE) ---
-            saveSession() {
-                try {
-                    const sessionData = {
-                        rawData: this.rawData,
-                        fileName: this.fileName,
-                        sortCol: this.sortCol,
-                        sortAsc: this.sortAsc,
-                        searchQuery: this.searchInput.value // Guarda el texto buscado
-                    };
-                    localStorage.setItem('inventario_session', JSON.stringify(sessionData));
-                } catch(e) {
-                    console.warn("No se pudo guardar la sesión en memoria local.");
+                    page.appendChild(grid); cont.appendChild(page);
                 }
             },
 
-            restoreSession() {
-                const stored = localStorage.getItem('inventario_session');
-                if (stored) {
-                    try {
-                        const sessionData = JSON.parse(stored);
-                        if(sessionData.rawData && sessionData.rawData.length > 0) {
-                            this.rawData = sessionData.rawData;
-                            this.fileName = sessionData.fileName || "Sesión Recuperada";
-                            this.sortCol = sessionData.sortCol || null;
-                            this.sortAsc = sessionData.sortAsc !== false;
-                            
-                            // REPARACIÓN: Carita sonriente también al restaurar memoria
-                            this.dropText.innerHTML = `<span style="color:var(--success); font-size: 1.1rem;"><i class="fa-solid fa-face-smile-beam" style="margin-right: 5px;"></i> Sesión recuperada:</span><br><b>${this.fileName}</b>`;
-                            this.btnClearSession.style.display = 'block';
-                            
-                            // Restaurar texto del buscador
-                            this.searchInput.value = sessionData.searchQuery || '';
-                            
-                            this.setupFilters();
-                        }
-                    } catch(e) {
-                        console.error("Error restaurando sesión", e);
-                    }
-                }
+            imprimir() {
+                if(this.queue.length === 0) return;
+                if(document.getElementById('lbl-print-container').children.length === 0) this.generarVistaPrevia();
+                setTimeout(() => window.print(), 250);
             },
 
-            clearSession() {
-                if(confirm("¿Estás seguro de borrar la memoria? Se perderán todas las modificaciones de stock físico que hayas digitado.")) {
-                    localStorage.removeItem('inventario_session');
-                    this.rawData = [];
-                    this.filteredData = [];
-                    this.fileName = '';
-                    this.sortCol = null;
-                    
-                    this.dropText.innerHTML = `<strong>Arrastra el Excel aquí</strong><br>o haz clic para buscar`;
-                    this.btnClearSession.style.display = 'none';
-                    this.bodegaSel.innerHTML = `<option value="">Cargue archivo...</option>`;
-                    this.bodegaSel.disabled = true;
-                    
-                    this.searchInput.value = '';
-                    this.searchInput.disabled = true;
-                    
-                    this.populateMultiSelect('ubicacion', [], 'Todas las ubicaciones');
-                    this.populateMultiSelect('familia', [], 'Todas las familias');
-                    
-                    this.btnPDF.disabled = true;
-                    this.tableContainer.innerHTML = `<div class="empty-state"><i class="fa-solid fa-cloud-arrow-up"></i><p>Esperando datos del inventario.<br>Cargue su documento Excel o restaure una sesión.</p></div>`;
-                    document.getElementById('metricsContainer').style.display = 'none';
-                    document.getElementById('paginationContainer').style.display = 'none';
-                }
+            draggedEl: null,
+            makeDraggable(el) {
+                el.addEventListener('dragstart', function(e) { LblApp.draggedEl = this; setTimeout(() => this.classList.add('invisible'), 0); });
+                el.addEventListener('dragend', function(e) { this.classList.remove('invisible'); LblApp.draggedEl = null; });
             },
-
-            exportPDF() {
-                if (this.filteredData.length === 0) return;
-                
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('p', 'pt', 'letter');
-                
-                const today = new Date();
-                const dateStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-
-                doc.setFontSize(14);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(6, 78, 59); // var(--primary)
-                doc.text('HOJA DE TOMA DE INVENTARIO', doc.internal.pageSize.width / 2, 40, { align: 'center' });
-                
-                // Datos Izquierda
-                doc.setFontSize(10);
-                doc.setFont('helvetica', 'normal');
-                doc.setTextColor(31, 41, 55);
-                doc.text(`Bodega: ${this.bodegaSel.value}`, 40, 65);
-                
-                // Datos Derecha (Responsable y Fecha)
-                doc.setFontSize(10);
-                doc.text('Responsable: ___________________________', doc.internal.pageSize.width - 40, 55, { align: 'right' });
-                
-                doc.setFontSize(8.5);
-                doc.setTextColor(100, 100, 100);
-                doc.text(`Fecha de toma inventario: ${dateStr}`, doc.internal.pageSize.width - 40, 72, { align: 'right' });
-
-                const tableData = this.filteredData.map(r => [ r.ubicacion, r.codigo, r.descripcion, r.cantidad, '' ]);
-
-                doc.autoTable({
-                    startY: 85, 
-                    head: [['Ubicación', 'Código', 'Descripción', 'Sist.', 'Físico']],
-                    body: tableData,
-                    styles: { 
-                        fontSize: 8, 
-                        cellPadding: 6,
-                        lineWidth: 0.8,
-                        lineColor: [40, 40, 40]
-                    },
-                    headStyles: { 
-                        fillColor: [4, 120, 87], 
-                        textColor: 255, 
-                        halign: 'center',
-                        lineWidth: 0.8,
-                        lineColor: [40, 40, 40]
-                    }, 
-                    columnStyles: {
-                        0: { cellWidth: 70 },
-                        1: { cellWidth: 70, fontStyle: 'bold' },
-                        2: { cellWidth: 'auto' }, 
-                        3: { cellWidth: 40, halign: 'center' },
-                        4: { cellWidth: 90 } 
-                    },
-                    theme: 'grid',
-                    didDrawPage: function (data) {
-                        // Marca de agua
-                        doc.saveGraphicsState();
-                        doc.setGState(new doc.GState({opacity: 0.08}));
-                        doc.setTextColor(150, 150, 150);
-                        doc.setFontSize(35);
-                        doc.setFont('helvetica', 'bold');
-                        doc.text(`INVENTARIO VALIDADO`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height / 2, {
-                            align: 'center', angle: 45
-                        });
-                        doc.restoreGraphicsState();
-
-                        // Pie de página
-                        doc.setFontSize(8);
-                        doc.setTextColor(150, 150, 150);
-                        doc.text(`Página ${data.pageNumber}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 20, { align: 'center' });
+            makeDroppable(slot) {
+                slot.addEventListener('dragover', e => e.preventDefault());
+                slot.addEventListener('dragenter', function(e) { e.preventDefault(); this.classList.add('hovered-slot'); });
+                slot.addEventListener('dragleave', function(e) { this.classList.remove('hovered-slot'); });
+                slot.addEventListener('drop', function(e) {
+                    e.preventDefault(); this.classList.remove('hovered-slot');
+                    if (LblApp.draggedEl) {
+                        if (this.children.length > 0) LblApp.draggedEl.parentElement.appendChild(this.children[0]);
+                        this.appendChild(LblApp.draggedEl);
                     }
                 });
-                
-                doc.save(`Inventario_${this.bodegaSel.value}_${dateStr}.pdf`);
             }
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
-            App.init();
+        // --- EVENT LISTENERS (INPUTS) ---
+        // Carga Archivos
+        document.getElementById('file-excel').addEventListener('change', e => { if (e.target.files[0]) GlobalApp.processExcel(e.target.files[0]); });
+        document.getElementById('file-pdf').addEventListener('change', e => { if (e.target.files[0]) LblApp.processPdfOC(e.target.files[0]); e.target.value=''; });
+        
+        // Listeners Inventario
+        document.getElementById('inv-sel-bodega').addEventListener('change', () => { InvApp.updateMultiSelects(); InvApp.applyFilters(); });
+        document.getElementById('inv-search').addEventListener('input', () => InvApp.applyFilters());
+        document.getElementById('inv-hide-zero').addEventListener('change', () => InvApp.applyFilters());
+        document.getElementById('inv-btn-pdf').addEventListener('click', () => InvApp.exportPDF());
+
+        // Listeners Etiquetas
+        document.getElementById('lbl-sel-bodega').addEventListener('change', () => { 
+            document.getElementById('lbl-search').value = ''; document.getElementById('lbl-search-results').style.display='none'; 
+            document.getElementById('lbl-search-ubica').value = ''; document.getElementById('lbl-results-ubica').style.display='none'; 
         });
+        document.getElementById('lbl-search').addEventListener('input', e => LblApp.searchIndividual(e.target.value.toLowerCase()));
+        document.getElementById('lbl-search-ubica').addEventListener('input', e => LblApp.searchUbicacion(e.target.value.toLowerCase()));
+
     </script>
 </body>
 </html>
