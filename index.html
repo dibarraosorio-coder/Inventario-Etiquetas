@@ -234,6 +234,7 @@
         .badge-stock { background: var(--bg); color: var(--text); padding: 3px 8px; border-radius: var(--radius-sm); font-size: 10px; font-weight: 800; border: 1px solid var(--border);}
         .badge-ubica { background: var(--accent); color: var(--surface); padding: 3px 8px; border-radius: var(--radius-sm); font-size: 10px; font-weight: 800; } 
         
+        /* Fila Agregar Manual */
         .fila-inputs { display: flex; gap: 8px; margin-bottom: 8px; }
         .fila-inputs > * { flex: 1; }
 
@@ -526,11 +527,18 @@
                     </div>
                 </div>
 
-                <!-- Buscador por Ubicación Completa -->
+                <!-- Select Múltiple para Ubicaciones (Etiquetas) -->
                 <div class="filter-group" style="position: relative;">
                     <label>2. Filtrar por Ubicación Completa:</label>
-                    <input type="text" id="lbl-search-ubica" class="pl-input" placeholder="Ej: A1..." autocomplete="off" disabled>
-                    <div id="lbl-results-ubica" class="resultados-busqueda"></div>
+                    <div class="multi-select" id="ms-lbl-ubicacion">
+                        <div class="ms-header disabled" id="header-lbl-ubicacion" onclick="LblApp.toggleDropdown('lbl-ubicacion')">
+                            Seleccionar ubicaciones <span><i class="fa-solid fa-chevron-down"></i></span>
+                        </div>
+                        <div class="ms-options" id="options-lbl-ubicacion"></div>
+                    </div>
+                    <button class="btn-outline" style="margin-top: 5px; height: 28px; width: 100%;" onclick="LblApp.agregarUbicacionesSeleccionadas()">
+                        ➕ Agregar Selección
+                    </button>
                 </div>
 
                 <!-- Agregar Producto Manual -->
@@ -743,7 +751,6 @@
                 document.querySelectorAll('.ms-options').forEach(el => el.classList.remove('show'));
             }
             if(e.target.id !== 'lbl-search') document.getElementById('lbl-search-results').style.display = 'none';
-            if(e.target.id !== 'lbl-search-ubica') document.getElementById('lbl-results-ubica').style.display = 'none';
         });
 
         // --- MÓDULO 1: INVENTARIO FÍSICO ---
@@ -977,7 +984,7 @@
                 const includeUbi = document.getElementById('inv-print-ubica').checked;
 
                 doc.setFontSize(14); doc.setFont('helvetica', 'bold');
-                doc.setTextColor(44, 62, 80); 
+                doc.setTextColor(0, 0, 0); 
                 doc.text('HOJA DE TOMA DE INVENTARIO', doc.internal.pageSize.width / 2, 40, { align: 'center' });
                 doc.setFontSize(10); doc.setFont('helvetica', 'normal');
                 doc.text(`Bodega: ${bodega}`, 40, 65);
@@ -1000,8 +1007,20 @@
                     startY: 85, 
                     head: [headRow],
                     body: data,
-                    styles: { fontSize: 8, cellPadding: 6, lineColor: [200, 200, 200] },
-                    headStyles: { fillColor: [92, 164, 211], textColor: 255, halign: 'center' },
+                    styles: { 
+                        fontSize: 8, 
+                        cellPadding: 6, 
+                        textColor: [0, 0, 0],     
+                        lineColor: [0, 0, 0],     
+                        lineWidth: 0.5            
+                    },
+                    headStyles: { 
+                        fillColor: [92, 164, 211], 
+                        textColor: 255, 
+                        halign: 'center',
+                        lineColor: [0, 0, 0],     
+                        lineWidth: 0.5
+                    },
                     columnStyles: colStyles,
                     theme: 'grid'
                 });
@@ -1019,8 +1038,8 @@
                 document.getElementById('lbl-sel-bodega').disabled = true;
                 document.getElementById('lbl-search').value = '';
                 document.getElementById('lbl-search').disabled = true;
-                document.getElementById('lbl-search-ubica').value = '';
-                document.getElementById('lbl-search-ubica').disabled = true;
+                
+                this.populateMultiSelect('lbl-ubicacion', [], 'Seleccionar ubicaciones');
                 
                 this.queue = [];
                 this.renderQueue();
@@ -1033,7 +1052,92 @@
                 sel.innerHTML = bodegas.map(b => `<option value="${b}">${b}</option>`).join('');
                 sel.disabled = false;
                 document.getElementById('lbl-search').disabled = false;
-                document.getElementById('lbl-search-ubica').disabled = false;
+                
+                this.updateMultiSelects();
+            },
+
+            // Lógica Multi-Select para Filtro Ubicaciones Etiquetas
+            toggleDropdown(id) {
+                const optionsDiv = document.getElementById(`options-${id}`);
+                const header = document.getElementById(`header-${id}`);
+                const isShowing = optionsDiv.classList.contains('show');
+                document.querySelectorAll('.ms-options').forEach(el => el.classList.remove('show'));
+                if (!isShowing && !header.classList.contains('disabled')) {
+                    optionsDiv.classList.add('show');
+                }
+            },
+            
+            populateMultiSelect(type, items, emptyText) {
+                const container = document.getElementById(`options-${type}`);
+                const header = document.getElementById(`header-${type}`);
+                container.innerHTML = '';
+                if (items.length === 0) {
+                    header.innerHTML = `${emptyText} <span><i class="fa-solid fa-chevron-down"></i></span>`;
+                    header.classList.add('disabled');
+                    return;
+                }
+                header.classList.remove('disabled');
+                header.innerHTML = `${emptyText} <span><i class="fa-solid fa-chevron-down"></i></span>`;
+                
+                items.forEach(item => {
+                    const label = document.createElement('label');
+                    label.className = 'ms-option-label';
+                    label.innerHTML = `<input type="checkbox" value="${item}" onchange="LblApp.handleMultiChange('${type}', '${emptyText}')"> ${item}`;
+                    container.appendChild(label);
+                });
+            },
+            
+            handleMultiChange(type, emptyText) {
+                const container = document.getElementById(`options-${type}`);
+                const header = document.getElementById(`header-${type}`);
+                const checkedCount = container.querySelectorAll('input:checked').length;
+                
+                if (checkedCount === 0) header.innerHTML = `${emptyText} <span><i class="fa-solid fa-chevron-down"></i></span>`;
+                else if (checkedCount === 1) header.innerHTML = `1 seleccionada <span><i class="fa-solid fa-chevron-down"></i></span>`;
+                else header.innerHTML = `${checkedCount} seleccionadas <span><i class="fa-solid fa-chevron-down"></i></span>`;
+            },
+
+            updateMultiSelects() {
+                const bodega = document.getElementById('lbl-sel-bodega').value;
+                if(!bodega) {
+                    this.populateMultiSelect('lbl-ubicacion', [], 'Seleccionar ubicaciones');
+                    return;
+                }
+                const ubicaciones = [...new Set(GlobalApp.data.filter(i => i.bodega === bodega).map(i => i.ubicacion))].sort();
+                this.populateMultiSelect('lbl-ubicacion', ubicaciones, 'Seleccionar ubicaciones');
+            },
+
+            agregarUbicacionesSeleccionadas() {
+                const bodega = document.getElementById('lbl-sel-bodega').value;
+                if(!bodega) return;
+                
+                const selUbiArray = Array.from(document.querySelectorAll('#options-lbl-ubicacion input:checked')).map(cb => cb.value);
+                if(selUbiArray.length === 0) {
+                    alert("Selecciona al menos una ubicación de la lista.");
+                    return;
+                }
+
+                const matchProds = GlobalApp.data.filter(p => p.bodega === bodega && selUbiArray.includes(p.ubicacion));
+                let added = 0;
+                
+                matchProds.forEach(p => {
+                    const existe = this.queue.find(item => item.codigo === p.codigo);
+                    if(!existe) { 
+                        this.queue.push({ codigo: p.codigo, desc: p.desc, ubicacion: p.ubicacion, bodega: p.bodega, cantidad: p.stock > 0 ? p.stock : 1, oc: "" }); 
+                        added++;
+                    }
+                });
+                
+                if(added > 0) {
+                    this.renderQueue();
+                    
+                    // Resetear el selector luego de agregar
+                    document.querySelectorAll('#options-lbl-ubicacion input:checked').forEach(cb => cb.checked = false);
+                    this.handleMultiChange('lbl-ubicacion', 'Seleccionar ubicaciones');
+                    document.getElementById('options-lbl-ubicacion').classList.remove('show');
+                } else {
+                    alert("Los productos de esas ubicaciones ya están en la cola de impresión.");
+                }
             },
 
             cargarBodegaCompleta() {
@@ -1066,7 +1170,7 @@
                     resDiv.innerHTML = match.map(p => `
                         <div class="resultado-item" onclick="LblApp.selectSearch('${p.id}')">
                             <div style="font-size:11px; color:var(--text);"><strong>${p.codigo}</strong><br>${p.desc}</div>
-                            <div style="text-align:right;"><span class="badge-ubica">Ub: ${p.ubicacion}</span><br><span class="badge-stock" style="margin-top:2px; display:inline-block;">Stk: ${p.stock}</span></div>
+                            <div style="text-align:right;"><span class="badge-stock">Stk: ${p.stock}</span></div>
                         </div>
                     `).join('');
                     resDiv.style.display = 'block';
@@ -1094,50 +1198,6 @@
                 this.renderQueue();
                 document.getElementById('lbl-add-block').style.display = 'none';
                 this.selectedProduct = null;
-            },
-
-            searchUbicacion(term) {
-                const resDiv = document.getElementById('lbl-results-ubica');
-                resDiv.innerHTML = '';
-                if(!term) { resDiv.style.display = 'none'; return; }
-
-                const bodega = document.getElementById('lbl-sel-bodega').value;
-                let ubicacionesMatch = [];
-                
-                GlobalApp.data.forEach(p => { 
-                    if(p.bodega === bodega && p.ubicacion.toLowerCase().includes(term) && !ubicacionesMatch.includes(p.ubicacion)) { 
-                        ubicacionesMatch.push(p.ubicacion); 
-                    } 
-                });
-                
-                if (ubicacionesMatch.length > 0) {
-                    resDiv.innerHTML = ubicacionesMatch.map(ub => {
-                        const count = GlobalApp.data.filter(p => p.bodega === bodega && p.ubicacion === ub).length;
-                        return `
-                            <div class="resultado-item" onclick="LblApp.cargarUbicacion('${ub}')">
-                                <div style="color:var(--text);">📍 Ub: <strong>${ub}</strong></div>
-                                <div><span class="badge-stock">${count} ítems</span></div>
-                            </div>
-                        `;
-                    }).join('');
-                    resDiv.style.display = 'block';
-                } else resDiv.style.display = 'none';
-            },
-
-            cargarUbicacion(ubiName) {
-                document.getElementById('lbl-search-ubica').value = '';
-                document.getElementById('lbl-results-ubica').style.display = 'none';
-                
-                const bodega = document.getElementById('lbl-sel-bodega').value;
-                const matchProds = GlobalApp.data.filter(p => p.bodega === bodega && p.ubicacion === ubiName);
-                
-                matchProds.forEach(p => {
-                    const existe = this.queue.find(item => item.codigo === p.codigo);
-                    if(!existe) { 
-                        this.queue.push({ codigo: p.codigo, desc: p.desc, ubicacion: p.ubicacion, bodega: p.bodega, cantidad: p.stock > 0 ? p.stock : 1, oc: "" }); 
-                    }
-                });
-                this.renderQueue();
             },
 
             toggleManualAdd() {
@@ -1384,11 +1444,10 @@
 
         // Listeners Etiquetas
         document.getElementById('lbl-sel-bodega').addEventListener('change', () => { 
+            LblApp.updateMultiSelects();
             document.getElementById('lbl-search').value = ''; document.getElementById('lbl-search-results').style.display='none'; 
-            document.getElementById('lbl-search-ubica').value = ''; document.getElementById('lbl-results-ubica').style.display='none'; 
         });
         document.getElementById('lbl-search').addEventListener('input', e => LblApp.searchIndividual(e.target.value.toLowerCase()));
-        document.getElementById('lbl-search-ubica').addEventListener('input', e => LblApp.searchUbicacion(e.target.value.toLowerCase()));
 
     </script>
 </body>
