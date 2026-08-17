@@ -998,8 +998,9 @@
                     return row;
                 });
 
+                // REGLA APLICADA: Reducir espacio de la columna Ubicación (índice 0) a 50 puntos
                 let colStyles = includeUbi ? 
-                    { 0: { cellWidth: 70 }, 1: { cellWidth: 70, fontStyle: 'bold' }, 2: { cellWidth: 'auto' }, 3: { cellWidth: 40, halign: 'center' }, 4: { cellWidth: 90 } } :
+                    { 0: { cellWidth: 50 }, 1: { cellWidth: 70, fontStyle: 'bold' }, 2: { cellWidth: 'auto' }, 3: { cellWidth: 40, halign: 'center' }, 4: { cellWidth: 90 } } :
                     { 0: { cellWidth: 80, fontStyle: 'bold' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 50, halign: 'center' }, 3: { cellWidth: 100 } };
 
                 doc.autoTable({
@@ -1021,7 +1022,13 @@
                         lineWidth: 0.5
                     },
                     columnStyles: colStyles,
-                    theme: 'grid'
+                    theme: 'grid',
+                    didDrawPage: function (data) {
+                        // Pie de página sutil con número de hoja
+                        doc.setFontSize(8);
+                        doc.setTextColor(100, 100, 100);
+                        doc.text(`Página ${data.pageNumber}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 20, { align: 'center' });
+                    }
                 });
                 doc.save(`Inventario_${bodega}_${dateStr}.pdf`);
             }
