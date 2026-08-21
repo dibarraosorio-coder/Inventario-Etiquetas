@@ -998,7 +998,6 @@
                     return row;
                 });
 
-                // REGLA APLICADA: Reducir espacio de la columna Ubicación (índice 0) a 50 puntos
                 let colStyles = includeUbi ? 
                     { 0: { cellWidth: 50 }, 1: { cellWidth: 70, fontStyle: 'bold' }, 2: { cellWidth: 'auto' }, 3: { cellWidth: 40, halign: 'center' }, 4: { cellWidth: 90 } } :
                     { 0: { cellWidth: 80, fontStyle: 'bold' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 50, halign: 'center' }, 3: { cellWidth: 100 } };
@@ -1063,7 +1062,6 @@
                 this.updateMultiSelects();
             },
 
-            // Lógica Multi-Select para Filtro Ubicaciones Etiquetas
             toggleDropdown(id) {
                 const optionsDiv = document.getElementById(`options-${id}`);
                 const header = document.getElementById(`header-${id}`);
@@ -1138,7 +1136,6 @@
                 if(added > 0) {
                     this.renderQueue();
                     
-                    // Resetear el selector luego de agregar
                     document.querySelectorAll('#options-lbl-ubicacion input:checked').forEach(cb => cb.checked = false);
                     this.handleMultiChange('lbl-ubicacion', 'Seleccionar ubicaciones');
                     document.getElementById('options-lbl-ubicacion').classList.remove('show');
@@ -1254,7 +1251,7 @@
 
             updateQty(i, val) { 
                 this.queue[i].cantidad = parseInt(val) || 0; 
-                this.renderQueue(); 
+                this.renderQueueUpdateOnly(); 
             },
             
             removeItem(i) { 
@@ -1274,6 +1271,7 @@
                 this.renderQueue();
             },
 
+            // Renderiza todo y reemplaza el HTML (pierde el foco si escribes)
             renderQueue() {
                 const tbody = document.getElementById('lbl-cola-tbody');
                 let tEti = 0;
@@ -1293,6 +1291,14 @@
                     }).join('');
                 }
                 
+                document.getElementById('lbl-total-eti').textContent = tEti;
+                document.getElementById('lbl-total-hoj').textContent = Math.ceil(tEti / 30);
+            },
+            
+            // Actualiza solo los textos del resumen para NO perder el cursor del input de cantidad
+            renderQueueUpdateOnly() {
+                let tEti = 0;
+                this.queue.forEach(item => { tEti += item.cantidad; });
                 document.getElementById('lbl-total-eti').textContent = tEti;
                 document.getElementById('lbl-total-hoj').textContent = Math.ceil(tEti / 30);
             },
@@ -1322,31 +1328,50 @@
                         for (let i = 0; i < lines.length; i++) {
                             if (lines[i].includes('|')) {
                                 let parts = lines[i].split('|');
-                                let cod = parts[0].replace(/[^A-Za-z0-9_-]/g, '').trim();
-                                let dsc = parts[1].replace(/["']/g, '').trim();
-                                let cant = 1;
-                                for (let j = 1; j <= 3; j++) {
-                                    if (i - j >= 0) {
-                                        let lp = lines[i - j].trim();
-                                        if (/^\d+([,.]\d+)?$/.test(lp)) { cant = parseInt(lp.split(/[,.]/)[0]) || 1; break; }
+                                let codRaw = parts[0].trim();
+                                let dscRaw = parts.slice(1).join(' ').trim(); 
+                                
+                                let cod = codRaw.replace(/[^A-Za-z0-9_-]/g, '');
+                                let dsc = dscRaw.replace(/["']/g, '').replace(/\|/g, '').trim(); 
+                                
+                                if (!cod) cod = "S/C";
+                                
+                                if (dsc && /[a-zA-Z]{3,}/.test(dsc) && !dsc.toLowerCase().includes("descripci")) {
+                                    let cant = 1;
+                                    for (let j = 1; j <= 4; j++) {
+                                        if (i - j >= 0) {
+                                            let lp = lines[i - j].trim();
+                                            if (/^\d+([,.]\d+)?$/.test(lp) && parseInt(lp) < 1000) { 
+                                                cant = parseInt(lp.split(/[,.]/)[0]) || 1; 
+                                                break; 
+                                            }
+                                        }
                                     }
-                                }
-                                if (cod) {
+                                    
                                     let match = GlobalApp.data.find(p => p.codigo.toLowerCase() === cod.toLowerCase());
                                     this.queue.push({
-                                        codigo: cod, desc: match ? match.desc : dsc,
+                                        codigo: cod, 
+                                        desc: match ? match.desc : dsc,
                                         ubicacion: match ? match.ubicacion : "OC-PDF",
                                         bodega: match ? match.bodega : currentBodega,
-                                        cantidad: cant, oc: nroOc
+                                        cantidad: cant, 
+                                        oc: nroOc
                                     });
                                     added++;
                                 }
                             }
                         }
                         this.renderQueue();
-                        document.getElementById('txt-pdf-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Cargado (${added} eti)</span>`;
+                        
+                        if (added > 0) {
+                            document.getElementById('txt-pdf-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Cargado (${added} eti)</span>`;
+                        } else {
+                            document.getElementById('txt-pdf-status').innerHTML = `<span style="color:var(--sys-red); font-weight:700;">Sin ítems</span>`;
+                            alert("No se detectaron productos válidos. Asegúrate de que el PDF de la OC tenga formato estándar con separadores '|'.");
+                        }
                     } catch (err) {
                         document.getElementById('txt-pdf-status').innerHTML = '<span style="color:var(--sys-red); font-weight:700;">Error PDF</span>';
+                        console.error(err);
                     }
                 };
                 reader.readAsArrayBuffer(file);
