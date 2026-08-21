@@ -258,10 +258,10 @@
         /* Capa de acciones sobre la etiqueta en Hover */
         .label-actions {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(240, 247, 250, 0.9); /* Fondo difuminado azul pastel */
+            background: rgba(240, 247, 250, 0.9); 
             display: flex; justify-content: space-between; align-items: center;
             opacity: 0; transition: opacity 0.2s; z-index: 5; padding: 0 12px;
-            border-radius: 4px; pointer-events: none; /* No bloquear el drag central */
+            border-radius: 4px; pointer-events: none; 
         }
         .label-content:hover .label-actions { opacity: 1; pointer-events: auto; }
         .action-drag { cursor: grab; font-size: 1.4rem; color: var(--sys-green); padding: 5px;}
@@ -286,62 +286,24 @@
         .t-code { font-size: 8.5pt; font-weight: 900; color: #000; }
 
         /* ==============================================================
-           8. CSS DE IMPRESIÓN (SOLUCIÓN DEL "SCREENSHOT")
+           8. CSS DE IMPRESIÓN 
            ============================================================== */
         @media print {
             body { 
                 background: #ffffff !important; 
                 color: #000000 !important; 
             }
-            
-            /* Ocultar elementos de UI completamente */
-            .header, 
-            .tabs-container { 
-                display: none !important; 
-            }
-            
-            /* Asegurar que SOLO se muestre la pestaña de etiquetas */
+            .header, .tabs-container { display: none !important; }
             #tab-inv { display: none !important; }
             #tab-lbl { display: block !important; }
-            
-            /* Ocultar sidebar en etiquetas */
             #tab-lbl .sidebar { display: none !important; }
-            
-            /* Ajustar contenedores para que el contenido fluya a la impresora */
-            .app-layout { 
-                display: block !important; 
-                overflow: visible !important; 
-                height: auto !important;
-            }
-            
-            .lbl-preview-area { 
-                display: block !important; 
-                padding: 0 !important; 
-                background: #fff !important; 
-                overflow: visible !important;
-                height: auto !important;
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-            }
-            
+            .app-layout { display: block !important; overflow: visible !important; height: auto !important; }
+            .lbl-preview-area { display: block !important; padding: 0 !important; background: #fff !important; overflow: visible !important; height: auto !important; position: absolute; left: 0; top: 0; width: 100%; }
             #lbl-msg-area { display: none !important; }
-            
             .sheet-wrapper { gap: 0; padding-bottom: 0; display: block !important; }
             .label-slot { border: none !important; } 
-            
-            /* Ocultar acciones de Hover al imprimir */
             .label-actions { display: none !important; }
-            
-            .page { 
-                box-shadow: none !important; 
-                border-radius: 0; 
-                margin: 0; 
-                padding-top: 15.5mm; 
-                padding-bottom: 11.5mm; 
-                page-break-after: always; 
-            }
+            .page { box-shadow: none !important; border-radius: 0; margin: 0; padding-top: 15.5mm; padding-bottom: 11.5mm; page-break-after: always; }
             @page { size: A4; margin: 0; }
         }
     </style>
@@ -363,7 +325,7 @@
                 <input type="file" id="file-excel" accept=".xlsx, .xls, .csv">
             </div>
 
-            <!-- Carga PDF O.C. (Solo visible en Etiquetas) -->
+            <!-- Carga PDF O.C. -->
             <div class="drop-zone" id="dz-pdf" onclick="document.getElementById('file-pdf').click()" style="display: none; border-color: var(--sys-red);">
                 <i class="fa-solid fa-file-pdf" style="color: var(--sys-red);"></i>
                 <div>
@@ -1023,7 +985,6 @@
                     columnStyles: colStyles,
                     theme: 'grid',
                     didDrawPage: function (data) {
-                        // Pie de página sutil con número de hoja
                         doc.setFontSize(8);
                         doc.setTextColor(100, 100, 100);
                         doc.text(`Página ${data.pageNumber}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 20, { align: 'center' });
@@ -1271,7 +1232,6 @@
                 this.renderQueue();
             },
 
-            // Renderiza todo y reemplaza el HTML (pierde el foco si escribes)
             renderQueue() {
                 const tbody = document.getElementById('lbl-cola-tbody');
                 let tEti = 0;
@@ -1294,8 +1254,7 @@
                 document.getElementById('lbl-total-eti').textContent = tEti;
                 document.getElementById('lbl-total-hoj').textContent = Math.ceil(tEti / 30);
             },
-            
-            // Actualiza solo los textos del resumen para NO perder el cursor del input de cantidad
+
             renderQueueUpdateOnly() {
                 let tEti = 0;
                 this.queue.forEach(item => { tEti += item.cantidad; });
@@ -1325,14 +1284,12 @@
                         let added = 0;
                         const currentBodega = document.getElementById('lbl-sel-bodega').value || "S/B";
 
+                        // PASO 1: Formato con separadores "|"
                         for (let i = 0; i < lines.length; i++) {
                             if (lines[i].includes('|')) {
                                 let parts = lines[i].split('|');
-                                let codRaw = parts[0].trim();
-                                let dscRaw = parts.slice(1).join(' ').trim(); 
-                                
-                                let cod = codRaw.replace(/[^A-Za-z0-9_-]/g, '');
-                                let dsc = dscRaw.replace(/["']/g, '').replace(/\|/g, '').trim(); 
+                                let cod = parts[0].replace(/[^A-Za-z0-9_-]/g, '').trim();
+                                let dsc = parts.slice(1).join(' ').replace(/["']/g, '').replace(/\|/g, '').trim();
                                 
                                 if (!cod) cod = "S/C";
                                 
@@ -1348,9 +1305,9 @@
                                         }
                                     }
                                     
-                                    let match = GlobalApp.data.find(p => p.codigo.toLowerCase() === cod.toLowerCase());
+                                    let match = GlobalApp.data.find(p => p.codigo.toLowerCase() === cod.toLowerCase() || p.desc.toLowerCase() === dsc.toLowerCase());
                                     this.queue.push({
-                                        codigo: cod, 
+                                        codigo: match ? match.codigo : cod, 
                                         desc: match ? match.desc : dsc,
                                         ubicacion: match ? match.ubicacion : "OC-PDF",
                                         bodega: match ? match.bodega : currentBodega,
@@ -1361,13 +1318,70 @@
                                 }
                             }
                         }
+
+                        // PASO 2: Formato PDF desglosado sin "|" (Ej: Greensystems / Parque Vespucio)
+                        if (added === 0) {
+                            for (let i = 0; i < lines.length; i++) {
+                                let lp = lines[i].trim();
+                                // Si la línea es puramente un número (Cantidad)
+                                if (/^\d+([,.]\d+)?$/.test(lp) && parseInt(lp) > 0 && parseInt(lp) < 1000) {
+                                    let cant = parseInt(lp.split(/[,.]/)[0]);
+                                    
+                                    // Buscar en las siguientes 3 líneas la descripción
+                                    for (let j = 1; j <= 3; j++) {
+                                        if (i + j < lines.length) {
+                                            let nextLine = lines[i + j].trim();
+                                            // Validar que parece una descripción (tiene letras y no es encabezado)
+                                            if (/[a-zA-Z]{5,}/.test(nextLine) && !/^(descripci|cantidad|precio|total|subtotal|valor)/i.test(nextLine)) {
+                                                let dsc = nextLine;
+                                                let cod = "S/C";
+
+                                                // Cruzar con maestro para obtener código
+                                                let match = GlobalApp.data.find(p => p.desc.toLowerCase() === dsc.toLowerCase() || p.desc.toLowerCase().includes(dsc.toLowerCase()));
+                                                if(match) { cod = match.codigo; dsc = match.desc; }
+
+                                                this.queue.push({
+                                                    codigo: cod, desc: dsc, 
+                                                    ubicacion: match ? match.ubicacion : "OC-PDF", 
+                                                    bodega: match ? match.bodega : currentBodega, 
+                                                    cantidad: cant, oc: nroOc
+                                                });
+                                                added++;
+                                                i = i + j; // Avanzar el índice
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // PASO 3: Rescate forzoso (Busca productos del maestro dentro de todo el texto)
+                        if (added === 0 && GlobalApp.data.length > 0) {
+                            let textLower = text.toLowerCase();
+                            GlobalApp.data.forEach(p => {
+                                if (p.bodega === currentBodega) {
+                                    if (textLower.includes(p.codigo.toLowerCase()) || (p.desc.length > 6 && textLower.includes(p.desc.toLowerCase()))) {
+                                        if (!this.queue.find(q => q.codigo === p.codigo)) {
+                                            this.queue.push({
+                                                codigo: p.codigo, desc: p.desc, 
+                                                ubicacion: p.ubicacion, bodega: p.bodega, 
+                                                cantidad: 1, oc: nroOc
+                                            });
+                                            added++;
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        
                         this.renderQueue();
                         
                         if (added > 0) {
                             document.getElementById('txt-pdf-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Cargado (${added} eti)</span>`;
                         } else {
                             document.getElementById('txt-pdf-status').innerHTML = `<span style="color:var(--sys-red); font-weight:700;">Sin ítems</span>`;
-                            alert("No se detectaron productos válidos. Asegúrate de que el PDF de la OC tenga formato estándar con separadores '|'.");
+                            alert("No se detectaron productos. El PDF no coincide con el formato esperado o los ítems no existen en la bodega seleccionada.");
                         }
                     } catch (err) {
                         document.getElementById('txt-pdf-status').innerHTML = '<span style="color:var(--sys-red); font-weight:700;">Error PDF</span>';
