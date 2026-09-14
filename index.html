@@ -15,32 +15,63 @@
     
     <style>
         /* ==============================================================
-           1. VARIABLES BASE (TEMA AZUL PASTEL)
+           1. ARQUITECTURA BASE Y SISTEMA MULTI-TEMA
            ============================================================== */
         :root {
             --font-main: 'Nunito', -apple-system, sans-serif;
             --radius-sm: 6px;
             --radius-md: 8px;
             --radius-lg: 12px;
-            
-            /* Paleta Azul Pastel */
+        }
+
+        /* 1. AZUL PASTEL (Tema actual) */
+        body[data-theme="pastel-blue"] {
             --bg: #F0F7FA;              
             --surface: #FFFFFF;         
             --surface2: #E1EFF6;        
             --border: #C4DFED;          
             --border-light: #DDF0F9;    
-            
             --text: #2C3E50;            
             --text-muted: #5C738A;      
             --text-tertiary: #85A0B7;   
-            
             --accent: #5CA4D3;          
             --accent-hover: #4A8CBA;    
             --accent-glow: rgba(92, 164, 211, 0.2);
-            
             --sys-green: #34d399;
             --sys-yellow: #fbbf24;
             --sys-red: #f87171;
+        }
+
+        /* 2. CORPORATE BLUE */
+        body[data-theme="corporate"] {
+            --bg: #0b1120; --surface: #151e32; --surface2: #1e293b; --border: #334155; --border-light: rgba(51, 65, 85, 0.5);
+            --text: #f8fafc; --text-muted: #94a3b8; --text-tertiary: #64748b;
+            --accent: #38bdf8; --accent-hover: #0284c7; --accent-glow: rgba(56, 189, 248, 0.15);
+            --sys-green: #34d399; --sys-yellow: #fbbf24; --sys-red: #f87171;
+        }
+
+        /* 3. ESCALA DE GRISES */
+        body[data-theme="grayscale"] {
+            --bg: #f8f9fa; --surface: #ffffff; --surface2: #f1f3f5; --border: #dee2e6; --border-light: rgba(222, 226, 230, 0.5);
+            --text: #212529; --text-muted: #495057; --text-tertiary: #868e96;
+            --accent: #343a40; --accent-hover: #212529; --accent-glow: rgba(52, 58, 64, 0.15);
+            --sys-green: #2b8a3e; --sys-yellow: #f59f00; --sys-red: #c92a2a;
+        }
+
+        /* 4. TRICOLOR (Azul, Rojo y Blanco) */
+        body[data-theme="tricolor"] {
+            --bg: #f4f6f9; --surface: #ffffff; --surface2: #e9ecef; --border: #dee2e6; --border-light: rgba(222, 226, 230, 0.5);
+            --text: #212529; --text-muted: #6c757d; --text-tertiary: #adb5bd;
+            --accent: #3b82f6; --accent-hover: #2563eb; --accent-glow: rgba(59, 130, 246, 0.2);
+            --sys-green: #10b981; --sys-yellow: #f59e0b; --sys-red: #ef4444;
+        }
+
+        /* 5. ROSADO PASTEL */
+        body[data-theme="pastel-pink"] {
+            --bg: #fdf8f9; --surface: #ffffff; --surface2: #fceef1; --border: #f8d7da; --border-light: rgba(248, 215, 218, 0.5);
+            --text: #4a3b3d; --text-muted: #857476; --text-tertiary: #b5a4a6;
+            --accent: #d97a8c; --accent-hover: #b56574; --accent-glow: rgba(217, 122, 140, 0.15);
+            --sys-green: #52b788; --sys-yellow: #e9c46a; --sys-red: #e56b6f;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,6 +86,7 @@
             flex-direction: column;
             overflow: hidden;
             -webkit-font-smoothing: antialiased;
+            transition: background 0.4s, color 0.4s;
         }
         
         ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -75,6 +107,7 @@
             border-bottom: 2px solid var(--border); 
             z-index: 1000;
             box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            transition: background 0.4s, border-color 0.4s;
         }
         
         .header h1 { font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; display: flex; align-items: center;}
@@ -286,13 +319,10 @@
         .t-code { font-size: 8.5pt; font-weight: 900; color: #000; }
 
         /* ==============================================================
-           8. CSS DE IMPRESIÓN 
+           8. CSS DE IMPRESIÓN
            ============================================================== */
         @media print {
-            body { 
-                background: #ffffff !important; 
-                color: #000000 !important; 
-            }
+            body { background: #ffffff !important; color: #000000 !important; }
             .header, .tabs-container { display: none !important; }
             #tab-inv { display: none !important; }
             #tab-lbl { display: block !important; }
@@ -308,13 +338,22 @@
         }
     </style>
 </head>
-<body>
+<body data-theme="pastel-blue">
 
     <!-- CABECERA PRINCIPAL UNIFICADA -->
     <div class="header">
         <h1>Hub Logístico <span class="accent-dot">·</span> <span style="color: var(--text-muted); font-weight: 600;">Inventario y Etiquetas</span></h1>
         
         <div class="upload-zone-container">
+            <!-- SELECTOR MULTI-TEMA -->
+            <select id="theme-selector" class="pl-select" style="width: auto; height: 34px; font-weight: 700;" onchange="document.body.setAttribute('data-theme', this.value)">
+                <option value="pastel-blue" selected>🟦 Azul Pastel</option>
+                <option value="corporate">🌌 Corporate Blue</option>
+                <option value="grayscale">⬛ Escala de Grises</option>
+                <option value="tricolor">🔴 Azul, Rojo y Blanco</option>
+                <option value="pastel-pink">🌸 Rosado Pastel</option>
+            </select>
+
             <!-- Carga Excel Maestro -->
             <div class="drop-zone" id="dz-excel" onclick="document.getElementById('file-excel').click()">
                 <i class="fa-solid fa-file-excel"></i>
@@ -612,8 +651,6 @@
                 if (stored) {
                     try {
                         const parsedData = JSON.parse(stored);
-                        
-                        // Forzamos a que el stock físico sea null (para no guardar lo digitado)
                         this.data = parsedData.map(item => ({...item, fisico: null}));
                         
                         document.getElementById('txt-excel-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Memoria Recuperada (${this.data.length} reg)</span>`;
@@ -629,7 +666,7 @@
             clearData() {
                 if(confirm("¿Seguro que deseas borrar toda la memoria y el Excel base cargado?")) {
                     this.data = [];
-                    localStorage.removeItem('hub_logistico_excel_base'); // Borrar memoria local
+                    localStorage.removeItem('hub_logistico_excel_base'); 
                     
                     document.getElementById('file-excel').value = '';
                     document.getElementById('file-pdf').value = '';
@@ -684,16 +721,14 @@
                                     familia: familiaVal,
                                     desc: String(row[kDesc] || row[3] || '').trim(),
                                     stock: parseFloat(row[kCant]) || 0,
-                                    fisico: null // Arranca vacío
+                                    fisico: null
                                 };
                             }).filter(r => r.codigo !== '' && !r.codigo.toLowerCase().includes('nº producto'));
                             
                             document.getElementById('txt-excel-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Cargado (${this.data.length} reg)</span>`;
                             
-                            // Guardar solo la base en Local Storage
                             localStorage.setItem('hub_logistico_excel_base', JSON.stringify(this.data));
                             
-                            // Cargar datos en módulos
                             InvApp.loadData();
                             LblApp.loadData();
                         }
@@ -706,7 +741,6 @@
             }
         };
 
-        // Cierra los menús flotantes al hacer clic afuera
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.multi-select')) {
                 document.querySelectorAll('.ms-options').forEach(el => el.classList.remove('show'));
@@ -1254,7 +1288,7 @@
                 document.getElementById('lbl-total-eti').textContent = tEti;
                 document.getElementById('lbl-total-hoj').textContent = Math.ceil(tEti / 30);
             },
-
+            
             renderQueueUpdateOnly() {
                 let tEti = 0;
                 this.queue.forEach(item => { tEti += item.cantidad; });
@@ -1262,6 +1296,7 @@
                 document.getElementById('lbl-total-hoj').textContent = Math.ceil(tEti / 30);
             },
 
+            // --- EXTRACCIÓN INTELIGENTE DE PDF CON DETECCIÓN DE EMPRESA ---
             processPdfOC(file) {
                 document.getElementById('txt-pdf-status').innerHTML = '<span style="color:var(--sys-yellow); font-weight:700;">Procesando...</span>';
                 const reader = new FileReader();
@@ -1280,16 +1315,26 @@
                         const matchOc = text.match(/ORDEN DE COMPRA\s*(?:N[°º. ]+)?\s*([A-Za-z0-9-]+)/i);
                         if (matchOc && matchOc[1]) { let m = matchOc[1].trim().match(/(\d+)$/); nroOc = m ? parseInt(m[1],10).toString() : matchOc[1].trim(); }
 
+                        // 1. Detectar si es ADMIN o INMOB
+                        let pdfBodega = document.getElementById('lbl-sel-bodega').value || "S/B";
+                        if (/Administradora Los Parques/i.test(text)) {
+                            pdfBodega = "ADMIN";
+                        } else if (/Inmobiliaria Los Parques/i.test(text)) {
+                            pdfBodega = "INMOB";
+                        }
+
                         const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                         let added = 0;
-                        const currentBodega = document.getElementById('lbl-sel-bodega').value || "S/B";
 
                         // PASO 1: Formato con separadores "|"
                         for (let i = 0; i < lines.length; i++) {
                             if (lines[i].includes('|')) {
                                 let parts = lines[i].split('|');
-                                let cod = parts[0].replace(/[^A-Za-z0-9_-]/g, '').trim();
-                                let dsc = parts.slice(1).join(' ').replace(/["']/g, '').replace(/\|/g, '').trim();
+                                let codRaw = parts[0].trim();
+                                let dscRaw = parts.slice(1).join(' ').trim(); 
+                                
+                                let cod = codRaw.replace(/[^A-Za-z0-9_-]/g, '');
+                                let dsc = dscRaw.replace(/["']/g, '').replace(/\|/g, '').trim(); 
                                 
                                 if (!cod) cod = "S/C";
                                 
@@ -1306,11 +1351,12 @@
                                     }
                                     
                                     let match = GlobalApp.data.find(p => p.codigo.toLowerCase() === cod.toLowerCase() || p.desc.toLowerCase() === dsc.toLowerCase());
+                                    
                                     this.queue.push({
                                         codigo: match ? match.codigo : cod, 
                                         desc: match ? match.desc : dsc,
-                                        ubicacion: match ? match.ubicacion : "OC-PDF",
-                                        bodega: match ? match.bodega : currentBodega,
+                                        ubicacion: (match && match.ubicacion && match.ubicacion !== "S/U") ? match.ubicacion : "", 
+                                        bodega: pdfBodega,
                                         cantidad: cant, 
                                         oc: nroOc
                                     });
@@ -1319,35 +1365,33 @@
                             }
                         }
 
-                        // PASO 2: Formato PDF desglosado sin "|" (Ej: Greensystems / Parque Vespucio)
+                        // PASO 2: Formato PDF desglosado sin "|" 
                         if (added === 0) {
                             for (let i = 0; i < lines.length; i++) {
                                 let lp = lines[i].trim();
-                                // Si la línea es puramente un número (Cantidad)
                                 if (/^\d+([,.]\d+)?$/.test(lp) && parseInt(lp) > 0 && parseInt(lp) < 1000) {
                                     let cant = parseInt(lp.split(/[,.]/)[0]);
                                     
-                                    // Buscar en las siguientes 3 líneas la descripción
                                     for (let j = 1; j <= 3; j++) {
                                         if (i + j < lines.length) {
                                             let nextLine = lines[i + j].trim();
-                                            // Validar que parece una descripción (tiene letras y no es encabezado)
                                             if (/[a-zA-Z]{5,}/.test(nextLine) && !/^(descripci|cantidad|precio|total|subtotal|valor)/i.test(nextLine)) {
                                                 let dsc = nextLine;
                                                 let cod = "S/C";
 
-                                                // Cruzar con maestro para obtener código
                                                 let match = GlobalApp.data.find(p => p.desc.toLowerCase() === dsc.toLowerCase() || p.desc.toLowerCase().includes(dsc.toLowerCase()));
                                                 if(match) { cod = match.codigo; dsc = match.desc; }
 
                                                 this.queue.push({
-                                                    codigo: cod, desc: dsc, 
-                                                    ubicacion: match ? match.ubicacion : "OC-PDF", 
-                                                    bodega: match ? match.bodega : currentBodega, 
-                                                    cantidad: cant, oc: nroOc
+                                                    codigo: cod, 
+                                                    desc: dsc, 
+                                                    ubicacion: (match && match.ubicacion && match.ubicacion !== "S/U") ? match.ubicacion : "", 
+                                                    bodega: pdfBodega, 
+                                                    cantidad: cant, 
+                                                    oc: nroOc
                                                 });
                                                 added++;
-                                                i = i + j; // Avanzar el índice
+                                                i = i + j; 
                                                 break;
                                             }
                                         }
@@ -1356,20 +1400,21 @@
                             }
                         }
 
-                        // PASO 3: Rescate forzoso (Busca productos del maestro dentro de todo el texto)
+                        // PASO 3: Rescate forzoso 
                         if (added === 0 && GlobalApp.data.length > 0) {
                             let textLower = text.toLowerCase();
                             GlobalApp.data.forEach(p => {
-                                if (p.bodega === currentBodega) {
-                                    if (textLower.includes(p.codigo.toLowerCase()) || (p.desc.length > 6 && textLower.includes(p.desc.toLowerCase()))) {
-                                        if (!this.queue.find(q => q.codigo === p.codigo)) {
-                                            this.queue.push({
-                                                codigo: p.codigo, desc: p.desc, 
-                                                ubicacion: p.ubicacion, bodega: p.bodega, 
-                                                cantidad: 1, oc: nroOc
-                                            });
-                                            added++;
-                                        }
+                                if (textLower.includes(p.codigo.toLowerCase()) || (p.desc.length > 6 && textLower.includes(p.desc.toLowerCase()))) {
+                                    if (!this.queue.find(q => q.codigo === p.codigo)) {
+                                        this.queue.push({
+                                            codigo: p.codigo, 
+                                            desc: p.desc, 
+                                            ubicacion: (p.ubicacion && p.ubicacion !== "S/U") ? p.ubicacion : "", 
+                                            bodega: pdfBodega, 
+                                            cantidad: 1, 
+                                            oc: nroOc
+                                        });
+                                        added++;
                                     }
                                 }
                             });
@@ -1381,7 +1426,7 @@
                             document.getElementById('txt-pdf-status').innerHTML = `<span style="color:var(--sys-green); font-weight:700;">Cargado (${added} eti)</span>`;
                         } else {
                             document.getElementById('txt-pdf-status').innerHTML = `<span style="color:var(--sys-red); font-weight:700;">Sin ítems</span>`;
-                            alert("No se detectaron productos. El PDF no coincide con el formato esperado o los ítems no existen en la bodega seleccionada.");
+                            alert("No se detectaron productos válidos. Asegúrate de que el PDF de la OC tenga formato estándar.");
                         }
                     } catch (err) {
                         document.getElementById('txt-pdf-status').innerHTML = '<span style="color:var(--sys-red); font-weight:700;">Error PDF</span>';
@@ -1421,7 +1466,6 @@
                             content.className = 'label-content'; content.draggable = true;
                             LblApp.makeDraggable(content);
                             
-                            let redCls = (item.ubicacion === "OC-PDF" || item.ubicacion === "S/U") ? "val-red" : "";
                             let blueCls = item.oc ? "val-blue" : "";
                             
                             content.innerHTML = `
@@ -1431,7 +1475,7 @@
                                 </div>
                                 <div class="left-col">
                                     <div class="data-group"><div class="t-title">BODEGA</div><div class="t-value">${item.bodega}</div></div>
-                                    <div class="data-group"><div class="t-title">UBICACIÓN</div><div class="t-value ${redCls}">${item.ubicacion || '-'}</div></div>
+                                    <div class="data-group"><div class="t-title">UBICACIÓN</div><div class="t-value">${item.ubicacion || ''}</div></div>
                                     <div class="data-group"><div class="t-title">O. COMPRA</div><div class="t-value ${blueCls}">${item.oc || '-'}</div></div>
                                 </div>
                                 <div class="divider-print"></div>
