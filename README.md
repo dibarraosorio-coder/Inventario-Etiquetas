@@ -1,6 +1,5 @@
 # 🏷️ Sistema Automatizado de Generación de Etiquetas de Bodega
 
-*(Coloca aquí una foto de una estantería o producto rotulado con tu etiqueta, o una captura de la pantalla donde se genera el código de barras/QR).*
 
 **Herramienta in-house para la estandarización visual y generación dinámica de rotulados, vinculada directamente al maestro de artículos del ERP.**
 
@@ -21,7 +20,6 @@ Desarrollé un generador centralizado que estandariza la identidad visual y oper
 
 # 📋 App de Toma de Inventario y Auditorías Cíclicas
 
-*(Coloca aquí una captura de pantalla de la interfaz de conteo, preferentemente adaptada a formato móvil o tablet).*
 
 **Plataforma digital para la ejecución de conteos físicos en terreno, conciliación de stock y control de mermas sin uso de papel.**
 
